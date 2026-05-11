@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vuelo del Murciélago - Edición Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Chango&family=Nunito:wght@400;900&display=swap');
+        
+        body { 
+            font-family: 'Nunito', sans-serif; 
+            background-color: #0f172a; 
+            color: #fff; 
+            overflow: hidden; 
+            touch-action: none;
+            height: 100dvh;
+        }
+
+        h1, h2, #score-display {
+            font-family: 'Chango', cursive;
+            text-shadow: 3px 3px 0px #4338ca;
+        }
+
+        .view { 
+            display: none; 
+            width: 100%; 
+            height: 100dvh; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .active { display: flex; }
+
+        canvas#gameCanvas { 
+            width: 100%;
+            max-width: 1200px; 
+            max-height: 85vh;  
+            height: auto; 
+            aspect-ratio: 16/9; 
+            border: 6px solid #6366f1; 
+            border-radius: 2rem; 
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.4); 
+            background: radial-gradient(circle, #1e1b4b 0%, #020617 100%); 
+        }
+
+        #qrcode {
+            padding: 12px;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 0 25px rgba(255,255,255,0.3);
+        }
+
+        .signature-glow {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            border: 2px solid #4338ca;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .camera-container {
+            position: relative;
+            width: 280px;
+            height: 350px;
+            border-radius: 2rem;
+            overflow: hidden;
+            background: #000;
+            border: 4px solid #6366f1;
+            margin-bottom: 1rem;
+        }
+
+        .face-guide-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse 60% 75% at 50% 50%, transparent 100%, rgba(15, 23, 42, 0.85) 100%);
+            pointer-events: none;
+            z-index: 10;
+            border: 3px dashed #fbbf24;
+            border-radius: 2rem;
+        }
+
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #capture-canvas { display: none; }
+
+        .btn-retro {
+            box-shadow: 0 6px 0 #1e1b4b, 0 10px 20px rgba(0,0,0,0.4);
+            transition: all 0.1s;
+        }
+        .btn-retro:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #1e1b4b, 0 5px 10px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- VISTA 1: HOST ESPERA CONEXIÓN -->
+    <div id="view-host-wait" class="view">
+        <div class="z-10 flex flex-col items-center text-center w-full max-w-2xl">
+            <div class="text-8xl mb-6 animate-bounce drop-shadow-[0_0_30px_rgba(165,180,252,1)]">🦇</div>
+            <h1 class="text-5xl sm:text-7xl text-indigo-200 mb-4 tracking-tighter">BAT-RADAR</h1>
+            
+            <div class="mb-6 w-full max-w-md py-4 px-6 rounded-2xl signature-glow">
+                <p class="text-sm sm:text-xl text-white font-bold">
+                    Creado por <span class="text-yellow-400">Nasslo Muñoz Saez</span>
+                </p>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-indigo-300 font-black mt-1">Ingeniero Informático</p>
+            </div>
+
+            <div id="qrcode" class="mb-6"></div>
+            <div id="host-status" class="bg-indigo-950/80 p-4 rounded-2xl border-2 border-indigo-500 text-indigo-100 font-bold animate-pulse">
+                Escanea el código para conectar tu móvil... 📱
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA 2: HOST JUEGO -->
+    <div id="view-host-game" class="view bg-slate-950">
+        <div class="flex justify-between items-center w-full max-w-[1200px] mb-4 px-6 bg-indigo-900/40 rounded-2xl py-3 border border-indigo-500/50 backdrop-blur-sm">
+            <h2 class="text-2xl sm:text-4xl text-yellow-400">PUNTAJE: <span id="score-display" class="text-white">0</span></h2>
+            <div class="text-right flex flex-col items-end gap-1">
+                <!-- Se actualizó para mostrar el nombre del jugador -->
+                <div class="bg-indigo-950/80 px-4 py-1 rounded-full border border-indigo-500/50">
+                    <span class="text-indigo-300 text-[10px] font-black uppercase tracking-widest mr-1">JUGADOR:</span>
+                    <span id="display-player-name" class="text-yellow-400 font-bold uppercase text-sm">ANÓNIMO</span>
+                </div>
+                <span class="text-emerald-400 font-bold flex items-center justify-end text-[10px] uppercase tracking-widest mt-1">
+                    <span class="animate-ping mr-2 text-red-500 text-xs">●</span> TRANSMITIENDO
+                </span>
+            </div>
+        </div>
+        <canvas id="gameCanvas" width="1200" height="675"></canvas>
+    </div>
+
+    <!-- VISTA 3: CONTROL REMOTO (MÓVIL) -->
+    <div id="view-controller" class="view">
+        <div class="flex flex-col items-center justify-center h-full w-full max-w-xs mx-auto">
+            
+            <!-- PASO A: FOTO -->
+            <div id="step-camera" class="w-full flex flex-col items-center">
+                <h1 class="text-2xl font-black text-yellow-400 mb-2 uppercase tracking-tighter">SISTEMA SELFIE</h1>
+                <p class="text-indigo-300 mb-4 text-sm text-center font-bold">Ubica tu rostro dentro del óvalo</p>
+                
+                <div class="camera-container">
+                    <video id="video-feed" autoplay playsinline></video>
+                    <div class="face-guide-overlay"></div>
+                </div>
+
+                <button id="btn-capture" class="btn-retro bg-indigo-600 text-white font-black text-xl py-5 px-8 rounded-2xl w-full">
+                    📸 CAPTURAR ROSTRO
+                </button>
+            </div>
+
+            <!-- PASO B: NOMBRE DEL JUGADOR (NUEVO) -->
+            <div id="step-name" class="hidden w-full flex flex-col items-center text-center">
+                <div class="text-6xl mb-4">🦇</div>
+                <h2 class="text-2xl font-black text-yellow-400 mb-2 uppercase tracking-tighter">¿CÓMO TE LLAMAS?</h2>
+                <p class="text-indigo-300 mb-6 text-sm font-bold">Ingresa tu nombre para el Ranking</p>
+                
+                <input type="text" id="player-name-input" placeholder="Tu nombre (Opcional)" maxlength="12" class="w-full text-center px-4 py-4 rounded-xl text-indigo-900 font-black text-xl mb-6 border-4 border-indigo-500 focus:outline-none focus:border-yellow-400">
+                
+                <button id="btn-submit-name" class="btn-retro bg-indigo-600 text-white font-black text-2xl py-5 px-8 rounded-2xl w-full">
+                    CONTINUAR 🚀
+                </button>
+            </div>
+
+            <!-- PASO C: SENSORES -->
+            <div id="step-sensors" class="hidden w-full text-center">
+                <div class="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.5)]">
+                    <span class="text-5xl">🦇</span>
+                </div>
+                <h2 class="text-emerald-400 mb-8 font-black text-2xl uppercase">¡ESTÁS LISTO!</h2>
+                <button onclick="startSensors()" class="btn-retro bg-emerald-500 text-white font-black text-2xl py-6 px-10 rounded-2xl w-full">
+                    ¡COMENZAR VUELO!
+                </button>
+            </div>
+
+            <!-- PASO D: JUGANDO -->
+            <div id="step-play" class="hidden flex-col items-center w-full flex-1 justify-center">
+                <button id="btn-flap" class="btn-retro bg-indigo-600 text-white font-black text-4xl py-16 px-6 rounded-[3rem] w-full flex flex-col items-center gap-4">
+                    <span class="text-7xl">✨</span>
+                    <span>¡ALETEAR!</span>
+                </button>
+                <p class="mt-8 text-indigo-300 text-sm font-black uppercase tracking-widest text-center">¡Sacude el móvil o presiona el botón para subir!</p>
+            </div>
+            
+            <p class="mt-8 text-[10px] text-indigo-500 font-bold uppercase tracking-[0.2em]">N. Muñoz Saez • Ing. Informático</p>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const isController = urlParams.get('role') === 'controller';
+        const hostId = urlParams.get('host');
+        let peer = null, connection = null, videoStream = null;
+
+        // --- SISTEMA DE AUDIO (MÚSICA Y EFECTOS) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // --- MÚSICA DE FONDO MP3 ---
+        // Asegúrate de tener el archivo 'bat-music.mp3' en la misma carpeta que este archivo HTML
+        const bgMusic = new Audio('bat-music.mp3');
+        bgMusic.loop = true; // Hace que la música se repita
+        bgMusic.volume = 0.4; // Ajusta el volumen general (0.0 a 1.0)
+
+        function playKuek() {
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(450, now);
+            osc.frequency.exponentialRampToValueAtTime(160, now + 0.18);
+
+            filter.type = 'bandpass';
+            filter.frequency.value = 850;
+            filter.Q.value = 6;
+
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.4, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(now + 0.35);
+        }
+
+        function startFunnyMusic() {
+            // Reinicia la canción al segundo cero y la reproduce
+            bgMusic.currentTime = 0;
+            bgMusic.play().catch(e => {
+                console.log("Haz clic en la pantalla del Host una vez para habilitar el audio");
+            });
+        }
+
+        // ==========================================
+        //  LÓGICA DEL CONTROLADOR (TELÉFONO MÓVIL)
+        // ==========================================
+        if (isController && hostId) {
+            document.getElementById('view-controller').classList.add('active');
+            const video = document.getElementById('video-feed');
+            const captureCanvas = document.createElement('canvas');
+            const btnCapture = document.getElementById('btn-capture');
+            const btnSubmitName = document.getElementById('btn-submit-name');
+            let capturedPhotoData = null;
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+                .then(stream => { videoStream = stream; video.srcObject = stream; })
+                .catch(() => alert("Por favor, permite el acceso a la cámara para jugar."));
+
+            peer = new Peer();
+            peer.on('open', () => { connection = peer.connect(hostId); });
+
+            // 1. Tomar Foto y pasar a Nombre
+            btnCapture.addEventListener('click', () => {
+                const width = 320;
+                const height = 420; 
+                captureCanvas.width = width;
+                captureCanvas.height = height;
+                const ctx = captureCanvas.getContext('2d');
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.ellipse(width/2, height/2, width * 0.32, height * 0.42, 0, 0, Math.PI * 2);
+                ctx.clip(); 
+
+                ctx.translate(width, 0);
+                ctx.scale(-1, 1); 
+
+                const vW = video.videoWidth;
+                const vH = video.videoHeight;
+                const drawW = vH * (width / height);
+                const startX = (vW - drawW) / 2;
+
+                ctx.drawImage(video, startX, 0, drawW, vH, 0, 0, width, height);
+                ctx.restore();
+
+                capturedPhotoData = captureCanvas.toDataURL('image/png');
+                videoStream?.getTracks().forEach(t => t.stop());
+                
+                document.getElementById('step-camera').classList.add('hidden');
+                document.getElementById('step-name').classList.remove('hidden');
+            });
+
+            // 2. Enviar Nombre + Foto y pasar a Sensores
+            btnSubmitName.addEventListener('click', () => {
+                const playerNameInput = document.getElementById('player-name-input').value.trim();
+                const finalName = playerNameInput !== "" ? playerNameInput : "Anónimo";
+                
+                if(connection?.open) {
+                    // Enviamos todo en un solo paquete de "setup"
+                    connection.send({ type: 'setup', photo: capturedPhotoData, name: finalName });
+                    document.getElementById('step-name').classList.add('hidden');
+                    document.getElementById('step-sensors').classList.remove('hidden');
+                }
+            });
+
+            window.startSensors = function() {
+                const activate = () => {
+                    window.addEventListener('devicemotion', handleMotion);
+                    document.getElementById('step-sensors').classList.add('hidden');
+                    document.getElementById('step-play').classList.remove('hidden');
+                    document.getElementById('step-play').classList.add('flex');
+                    const btn = document.getElementById('btn-flap');
+                    const flapAction = (e) => { e.preventDefault(); if(connection?.open) connection.send({ type: 'flap' }); };
+                    btn.addEventListener('touchstart', flapAction, {passive: false});
+                    btn.addEventListener('mousedown', flapAction);
+                };
+
+                if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                    DeviceMotionEvent.requestPermission()
+                        .then(permissionState => { 
+                            if (permissionState === 'granted') { 
+                                activate(); 
+                            } else {
+                                alert("¡Atención! Safari bloqueó el sensor. Reinicia la página y acepta los permisos de movimiento.");
+                            }
+                        })
+                        .catch(err => {
+                            alert("Error de sensores: Recuerda que en iPhone debes abrir este juego usando HTTPS (conexión segura).");
+                            console.error(err);
+                        });
+                } else { 
+                    activate(); 
+                }
+            };
+
+            let lastFlap = 0;
+            function handleMotion(e) {
+                let acc = e.accelerationIncludingGravity;
+                if (!acc || !connection?.open) return;
+                if (Math.abs(acc.y) > 13 || Math.abs(acc.z) > 13) {
+                    const now = Date.now();
+                    if (now - lastFlap > 200) { connection.send({ type: 'flap' }); lastFlap = now; }
+                }
+            }
+        } 
+        
+        // ==========================================
+        //  LÓGICA DEL HOST (PANTALLA PRINCIPAL)
+        // ==========================================
+        else {
+            document.getElementById('view-host-wait').classList.add('active');
+            peer = new Peer();
+            peer.on('open', (id) => {
+                const url = `${window.location.href.split('?')[0]}?role=controller&host=${id}`;
+                new QRCode(document.getElementById("qrcode"), { text: url, width: 180, height: 180 });
+            });
+
+            // Variables de estado del Host
+            let currentPlayerName = "Anónimo";
+            let leaderboard = []; // Arreglo para guardar el ranking en la memoria
+
+            peer.on('connection', (conn) => {
+                connection = conn;
+                document.getElementById('host-status').innerText = "¡SISTEMA LISTO! 🦇";
+                
+                conn.on('data', (payload) => {
+                    // Recibir la configuración inicial (Foto + Nombre)
+                    if (payload.type === 'setup') {
+                        currentPlayerName = payload.name;
+                        document.getElementById('display-player-name').innerText = currentPlayerName;
+
+                        const img = new Image();
+                        img.onload = () => {
+                            customHead = img;
+                            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+                            document.getElementById('view-host-game').classList.add('active');
+                            if (audioCtx.state === 'suspended') audioCtx.resume();
+                            startFunnyMusic();
+                            resetGame();
+                        };
+                        img.src = payload.photo;
+                    }
+                    if (payload.type === 'flap') { 
+                        if (isGameOver) resetGame(); else bat.flap(); 
+                    }
+                });
+            });
+
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            let frames = 0, score = 0, isGameOver = false, customHead = null;
+            
+            let stars = Array.from({length: 100}, () => ({ 
+                x: Math.random() * 1200, 
+                y: Math.random() * 675, 
+                s: Math.random() * 2.5, 
+                o: Math.random(),
+                c: `hsl(${Math.random()*360}, 70%, 80%)`
+            }));
+
+            const bat = {
+                x: 120, y: 300, w: 110, h: 75, velocity: 0, gravity: 0.32, jump: -7.0,
+                draw: function() {
+                    ctx.save();
+                    ctx.translate(this.x + this.w/2, this.y + this.h/2);
+                    ctx.rotate(Math.min(Math.PI/6, Math.max(-Math.PI/6, this.velocity * 0.045)));
+                    let flapAnim = Math.sin(frames * 0.35) * 35;
+                    
+                    const wingGrad = ctx.createLinearGradient(-80, 0, 80, 0);
+                    wingGrad.addColorStop(0, '#1e1b4b');
+                    wingGrad.addColorStop(0.5, '#818cf8');
+                    wingGrad.addColorStop(1, '#1e1b4b');
+                    ctx.fillStyle = wingGrad;
+                    
+                    ctx.beginPath(); ctx.moveTo(-15, 0); ctx.quadraticCurveTo(-60, -50 + flapAnim, -100, 0); ctx.lineTo(-55, 25); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(15, 0); ctx.quadraticCurveTo(60, -50 + flapAnim, 100, 0); ctx.lineTo(55, 25); ctx.fill();
+                    
+                    ctx.fillStyle = "#312e81";
+                    ctx.beginPath(); ctx.ellipse(0, 15, 28, 35, 0, 0, Math.PI * 2); ctx.fill();
+
+                    if (customHead) {
+                        ctx.save();
+                        ctx.beginPath(); 
+                        ctx.ellipse(0, -42, 38, 48, 0, 0, Math.PI * 2); 
+                        ctx.clip();
+                        ctx.drawImage(customHead, -38, -90, 76, 96);
+                        ctx.restore();
+                        
+                        ctx.fillStyle = "#1e1b4b";
+                        ctx.beginPath(); ctx.moveTo(-15, -80); ctx.lineTo(-35, -125); ctx.lineTo(-5, -95); ctx.fill();
+                        ctx.beginPath(); ctx.moveTo(15, -80); ctx.lineTo(35, -125); ctx.lineTo(5, -95); ctx.fill();
+                    }
+                    ctx.restore();
+                },
+                update: function() {
+                    this.velocity += this.gravity; this.y += this.velocity;
+                    if (this.y + this.h >= canvas.height - 10) gameOver();
+                    if (this.y <= 0) { this.y = 0; this.velocity = 0; }
+                },
+                flap: function() { this.velocity = this.jump; }
+            };
+
+            const obstacles = {
+                items: [], w: 60, h: 40, dx: 4.5,
+                update: function() {
+                    if (frames % 120 === 0) this.dx += 0.05;
+
+                    if (frames % 85 === 0) {
+                        let yPos = Math.random() * (canvas.height - 150) + 75; 
+                        let speedVariance = Math.random() * 2 - 1; 
+                        
+                        this.items.push({ 
+                            x: canvas.width + 50, 
+                            y: yPos, 
+                            passed: false, 
+                            color: `hsl(${Math.random()*40 + 340}, 90%, 65%)`, 
+                            offset: Math.random() * 100, 
+                            sv: speedVariance, 
+                            waveOffset: Math.random() * Math.PI * 2 
+                        });
+                    }
+
+                    this.items.forEach((p, i) => {
+                        p.x -= (this.dx + p.sv);
+                        p.y += Math.sin(frames * 0.06 + p.waveOffset) * 2;
+
+                        let batHitX = bat.x + 30; let batHitY = bat.y + 20;
+                        let batHitW = bat.w - 60; let batHitH = bat.h - 30;
+
+                        let birdHitX = p.x - this.w/2; let birdHitY = p.y - this.h/2;
+                        let birdHitW = this.w; let birdHitH = this.h;
+
+                        if (batHitX < birdHitX + birdHitW && batHitX + batHitW > birdHitX &&
+                            batHitY < birdHitY + birdHitH && batHitY + batHitH > birdHitY) {
+                            gameOver();
+                        }
+
+                        if (p.x + this.w/2 < bat.x && !p.passed) { 
+                            score++; p.passed = true; 
+                            document.getElementById('score-display').innerText = score; 
+                        }
+                        
+                        if (p.x < -100) this.items.splice(i, 1);
+                    });
+                },
+                draw: function() {
+                    this.items.forEach(p => {
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        
+                        let flap = Math.sin(frames * 0.4 + p.offset) * 20;
+                        
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.moveTo(5, 0);
+                        ctx.quadraticCurveTo(20, -25 + flap, 35, -5 + flap);
+                        ctx.lineTo(5, 5);
+                        ctx.fill();
+
+                        ctx.shadowBlur = 15; ctx.shadowColor = p.color;
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, 22, 14, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        ctx.filter = "brightness(80%)"; 
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.quadraticCurveTo(-15, -30 + flap, -30, -5 + flap);
+                        ctx.lineTo(0, 5);
+                        ctx.fill();
+                        ctx.filter = "none";
+                        
+                        ctx.fillStyle = "#fbbf24"; 
+                        ctx.beginPath();
+                        ctx.moveTo(-20, 0);
+                        ctx.lineTo(-35, 5);
+                        ctx.lineTo(-18, 8);
+                        ctx.fill();
+                        
+                        ctx.fillStyle = "white";
+                        ctx.beginPath();
+                        ctx.arc(-10, -4, 4, 0, Math.PI*2);
+                        ctx.fill();
+                        ctx.fillStyle = "black";
+                        ctx.beginPath();
+                        ctx.arc(-11, -4, 2, 0, Math.PI*2);
+                        ctx.fill();
+                        
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = "black";
+                        ctx.beginPath();
+                        ctx.moveTo(-6, -8);
+                        ctx.lineTo(-14, -6);
+                        ctx.stroke();
+
+                        ctx.restore();
+                    });
+                }
+            };
+
+            function gameOver() {
+                if(!isGameOver) {
+                    playKuek();
+                    bgMusic.pause(); // Pausamos el MP3 al perder
+                    
+                    // --- SISTEMA DE RANKING (Añadir nuevo récord) ---
+                    // Guardamos el récord si es mayor a 0 para no llenar el top con ceros (opcional)
+                    leaderboard.push({ name: currentPlayerName, score: score });
+                    leaderboard.sort((a, b) => b.score - a.score); // Ordenar de mayor a menor puntaje
+                    leaderboard = leaderboard.slice(0, 5); // Quedarse solo con los Top 5
+                }
+                
+                isGameOver = true;
+                
+                // Fondo semi-transparente
+                ctx.fillStyle = "rgba(2, 6, 23, 0.95)"; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Texto de final de partida
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#fbbf24"; ctx.font = "bold 60px Chango"; 
+                ctx.fillText("¡BAT-KUEK!", canvas.width/2, canvas.height/2 - 200);
+                
+                ctx.fillStyle = "#fff"; ctx.font = "bold 32px Nunito";
+                ctx.fillText(`PUNTAJE FINAL: ${score}`, canvas.width/2, canvas.height/2 - 130);
+                
+                // --- DIBUJAR TABLERO DEL RANKING TOP 5 ---
+                ctx.fillStyle = "rgba(30, 27, 75, 0.8)"; 
+                ctx.fillRect(canvas.width/2 - 250, canvas.height/2 - 80, 500, 280);
+                ctx.strokeStyle = "#6366f1"; ctx.lineWidth = 4;
+                ctx.strokeRect(canvas.width/2 - 250, canvas.height/2 - 80, 500, 280);
+
+                ctx.fillStyle = "#facc15"; ctx.font = "bold 28px Chango";
+                ctx.fillText("🏆 RANKING TOP 5 🏆", canvas.width/2, canvas.height/2 - 30);
+                
+                ctx.font = "bold 22px Nunito";
+                ctx.fillStyle = "#fff";
+                
+                leaderboard.forEach((entry, index) => {
+                    let yOffset = canvas.height/2 + 25 + (index * 35);
+                    let medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🦇";
+                    
+                    // Nombre a la izquierda, Puntaje a la derecha
+                    ctx.textAlign = "left";
+                    ctx.fillText(`${medal} ${entry.name}`, canvas.width/2 - 180, yOffset);
+                    ctx.textAlign = "right";
+                    ctx.fillText(`${entry.score} pts`, canvas.width/2 + 180, yOffset);
+                });
+
+                // Mensaje de reinicio
+                ctx.textAlign = "center";
+                ctx.font = "italic 22px Nunito";
+                ctx.fillStyle = "#818cf8";
+                ctx.fillText("¡Sacude el móvil para reintentar!", canvas.width/2, canvas.height - 40);
+            }
+
+            function resetGame() {
+                bat.y = 250; bat.velocity = 0; obstacles.items = []; obstacles.dx = 4.5; score = 0; frames = 0; isGameOver = false;
+                document.getElementById('score-display').innerText = score; 
+                startFunnyMusic();
+                loop();
+            }
+
+            function loop() {
+                if (isGameOver) return;
+                const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 50, canvas.width/2, canvas.height/2, 600);
+                grad.addColorStop(0, '#1e1b4b');
+                grad.addColorStop(1, '#020617');
+                ctx.fillStyle = grad; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                stars.forEach(s => {
+                    s.x -= 0.8; if(s.x < 0) s.x = 1200; 
+                    ctx.fillStyle = s.c;
+                    ctx.globalAlpha = 0.3 + Math.sin(frames*0.06 + s.o)*0.6;
+                    ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill();
+                    ctx.globalAlpha = 1;
+                });
+
+                ctx.shadowBlur = 40; ctx.shadowColor = "rgba(253, 230, 138, 0.4)";
+                ctx.fillStyle = "#fef3c7"; ctx.beginPath(); ctx.arc(1050, 100, 65, 0, Math.PI*2); ctx.fill();
+                ctx.shadowBlur = 0;
+
+                obstacles.update(); obstacles.draw(); bat.update(); bat.draw();
+                frames++; requestAnimationFrame(loop);
+            }
+        }
+    </script>
+</body>
+</html>
