@@ -3,634 +3,1109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vuelo del Murciélago - Edición Pro</title>
+    <title>Eco-Esquiva: Aire y Mar</title>
+    <!-- Tailwind CSS para el diseño de la UI -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- FontAwesome para iconos atractivos -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Librería para generar Códigos QR -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
+    <!-- Librería PeerJS para conexión directa de Celular a Pantalla -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Chango&family=Nunito:wght@400;900&display=swap');
-        
-        body { 
-            font-family: 'Nunito', sans-serif; 
-            background-color: #0f172a; 
-            color: #fff; 
-            overflow: hidden; 
-            touch-action: none;
-            height: 100dvh;
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Nunito', sans-serif;
+            user-select: none;
+            touch-action: manipulation;
         }
-
-        h1, h2, #score-display {
-            font-family: 'Chango', cursive;
-            text-shadow: 3px 3px 0px #4338ca;
+        canvas {
+            display: block;
+            background-color: #111827;
         }
-
-        .view { 
-            display: none; 
-            width: 100%; 
-            height: 100dvh; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 1rem;
-            box-sizing: border-box;
+        .btn-bounce:active {
+            transform: scale(0.95);
         }
-        .active { display: flex; }
-
-        canvas#gameCanvas { 
-            width: 100%;
-            max-width: 1200px; 
-            max-height: 85vh;  
-            height: auto; 
-            aspect-ratio: 16/9; 
-            border: 6px solid #6366f1; 
-            border-radius: 2rem; 
-            box-shadow: 0 0 50px rgba(99, 102, 241, 0.4); 
-            background: radial-gradient(circle, #1e1b4b 0%, #020617 100%); 
-        }
-
-        #qrcode {
-            padding: 12px;
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 0 25px rgba(255,255,255,0.3);
-        }
-
-        .signature-glow {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-            border: 2px solid #4338ca;
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
-        }
-
-        .camera-container {
-            position: relative;
-            width: 280px;
-            height: 350px;
-            border-radius: 2rem;
-            overflow: hidden;
-            background: #000;
-            border: 4px solid #6366f1;
-            margin-bottom: 1rem;
-        }
-
-        .face-guide-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(ellipse 60% 75% at 50% 50%, transparent 100%, rgba(15, 23, 42, 0.85) 100%);
-            pointer-events: none;
-            z-index: 10;
-            border: 3px dashed #fbbf24;
-            border-radius: 2rem;
-        }
-
-        #video-feed {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        #capture-canvas { display: none; }
-
-        .btn-retro {
-            box-shadow: 0 6px 0 #1e1b4b, 0 10px 20px rgba(0,0,0,0.4);
-            transition: all 0.1s;
-        }
-        .btn-retro:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #1e1b4b, 0 5px 10px rgba(0,0,0,0.2);
+        /* Estilos para burbuja de nivel de inclinación */
+        .level-container {
+            background: radial-gradient(circle, #334155 60%, #1e293b 100%);
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between overflow-hidden relative">
 
-    <!-- VISTA 1: HOST ESPERA CONEXIÓN -->
-    <div id="view-host-wait" class="view">
-        <div class="z-10 flex flex-col items-center text-center w-full max-w-2xl">
-            <div class="text-8xl mb-6 animate-bounce drop-shadow-[0_0_30px_rgba(165,180,252,1)]">🦇</div>
-            <h1 class="text-5xl sm:text-7xl text-indigo-200 mb-4 tracking-tighter">BAT-RADAR</h1>
-            
-            <div class="mb-6 w-full max-w-md py-4 px-6 rounded-2xl signature-glow">
-                <p class="text-sm sm:text-xl text-white font-bold">
-                    Creado por <span class="text-yellow-400">Nasslo Muñoz Saez</span>
-                </p>
-                <p class="text-[10px] uppercase tracking-[0.3em] text-indigo-300 font-black mt-1">Ingeniero Informático</p>
-            </div>
+    <!-- PANTALLA PRINCIPAL: SELECCIÓN DE CATEGORÍA -->
+    <div id="lobby-screen" class="absolute inset-0 z-40 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <h1 class="text-4xl md:text-6xl font-black mb-2 tracking-tight bg-gradient-to-r from-sky-400 via-teal-400 to-indigo-500 bg-clip-text text-transparent">
+            ECO-ESQUIVA
+        </h1>
+        <p class="text-slate-400 text-sm md:text-base max-w-md mb-6">
+            Elige un ecosistema, desafía las físicas y demuestra tus reflejos esquivando peligros de la naturaleza con tu celular.
+        </p>
 
-            <div id="qrcode" class="mb-6"></div>
-            <div id="host-status" class="bg-indigo-950/80 p-4 rounded-2xl border-2 border-indigo-500 text-indigo-100 font-bold animate-pulse">
-                Escanea el código para conectar tu móvil... 📱
+        <!-- Conexión Celular QR Panel -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 mb-8 max-w-md w-full flex flex-col items-center">
+            <h3 class="text-sm font-black text-sky-400 uppercase tracking-widest mb-3">
+                <i class="fa-solid fa-mobile-screen-button mr-2 animate-bounce"></i> Conecta tu Celular como Control
+            </h3>
+            <div id="qr-container" class="bg-white p-3 rounded-2xl shadow-lg border-4 border-sky-500/30">
+                <div id="qr-code" class="flex items-center justify-center w-36 h-36 bg-slate-100">
+                    <span class="text-xs text-slate-500 text-center px-2">Iniciando servidor de conexión...</span>
+                </div>
             </div>
+            <p id="connection-status" class="text-xs text-slate-400 mt-3 font-semibold text-center">
+                Escanea el código QR para activar el giroscopio y tomar tu foto de piloto.
+            </p>
+        </div>
+
+        <!-- Tarjetas de Selección -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mb-8">
+            <!-- Modo Volar -->
+            <button onclick="startGameMode('volar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-purple-500/30 hover:border-purple-500 rounded-3xl p-6 transition-all duration-300 text-left flex flex-col justify-between h-40 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)]">
+                <div class="absolute -right-6 -bottom-6 text-9xl opacity-10 group-hover:opacity-25 transition-opacity duration-300">🦇</div>
+                <div class="flex justify-between items-start w-full">
+                    <span class="text-4xl">🦇</span>
+                    <span class="bg-purple-500/20 text-purple-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Flappy Air</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-black text-purple-400">Modo Volar</h2>
+                    <p class="text-[11px] text-slate-400 mt-1">Esquiva estalagmitas en una caverna oscura con físicas rápidas.</p>
+                </div>
+            </button>
+
+            <!-- Modo Nadar -->
+            <button onclick="startGameMode('nadar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-sky-500/30 hover:border-sky-500 rounded-3xl p-6 transition-all duration-300 text-left flex flex-col justify-between h-40 hover:shadow-[0_0_30px_rgba(14,165,233,0.2)]">
+                <div class="absolute -right-6 -bottom-6 text-9xl opacity-10 group-hover:opacity-25 transition-opacity duration-300">🐬</div>
+                <div class="flex justify-between items-start w-full">
+                    <span class="text-4xl">🐬</span>
+                    <span class="bg-sky-500/20 text-sky-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Submarino</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-black text-sky-400">Modo Nadar</h2>
+                    <p class="text-[11px] text-slate-400 mt-1">Esquiva tiburones bajo el mar con físicas de agua fluidas.</p>
+                </div>
+            </button>
         </div>
     </div>
 
-    <!-- VISTA 2: HOST JUEGO -->
-    <div id="view-host-game" class="view bg-slate-950">
-        <div class="flex justify-between items-center w-full max-w-[1200px] mb-4 px-6 bg-indigo-900/40 rounded-2xl py-3 border border-indigo-500/50 backdrop-blur-sm">
-            <h2 class="text-2xl sm:text-4xl text-yellow-400">PUNTAJE: <span id="score-display" class="text-white">0</span></h2>
-            <div class="text-right flex flex-col items-end gap-1">
-                <!-- Se actualizó para mostrar el nombre del jugador -->
-                <div class="bg-indigo-950/80 px-4 py-1 rounded-full border border-indigo-500/50">
-                    <span class="text-indigo-300 text-[10px] font-black uppercase tracking-widest mr-1">JUGADOR:</span>
-                    <span id="display-player-name" class="text-yellow-400 font-bold uppercase text-sm">ANÓNIMO</span>
-                </div>
-                <span class="text-emerald-400 font-bold flex items-center justify-end text-[10px] uppercase tracking-widest mt-1">
-                    <span class="animate-ping mr-2 text-red-500 text-xs">●</span> TRANSMITIENDO
-                </span>
-            </div>
+    <!-- PANTALLA DE JUEGO HUD -->
+    <div id="game-hud" class="absolute top-4 left-4 right-4 z-30 flex justify-between items-center pointer-events-none opacity-0 transition-opacity duration-500">
+        <!-- Marcador de Puntos -->
+        <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-700 flex items-center gap-3">
+            <span class="text-yellow-400 font-bold"><i class="fa-solid fa-star"></i> Ptos:</span>
+            <span id="score-val" class="font-black text-xl">0</span>
+            <span id="remote-badge" class="hidden bg-emerald-500/20 text-emerald-400 text-xs font-black px-2 py-0.5 rounded-md border border-emerald-500/30 animate-pulse"><i class="fa-solid fa-mobile animate-bounce"></i> Remoto</span>
         </div>
-        <canvas id="gameCanvas" width="1200" height="675"></canvas>
-    </div>
 
-    <!-- VISTA 3: CONTROL REMOTO (MÓVIL) -->
-    <div id="view-controller" class="view">
-        <div class="flex flex-col items-center justify-center h-full w-full max-w-xs mx-auto">
-            
-            <!-- PASO A: FOTO -->
-            <div id="step-camera" class="w-full flex flex-col items-center">
-                <h1 class="text-2xl font-black text-yellow-400 mb-2 uppercase tracking-tighter">SISTEMA SELFIE</h1>
-                <p class="text-indigo-300 mb-4 text-sm text-center font-bold">Ubica tu rostro dentro del óvalo</p>
-                
-                <div class="camera-container">
-                    <video id="video-feed" autoplay playsinline></video>
-                    <div class="face-guide-overlay"></div>
-                </div>
-
-                <button id="btn-capture" class="btn-retro bg-indigo-600 text-white font-black text-xl py-5 px-8 rounded-2xl w-full">
-                    📸 CAPTURAR ROSTRO
-                </button>
-            </div>
-
-            <!-- PASO B: NOMBRE DEL JUGADOR (NUEVO) -->
-            <div id="step-name" class="hidden w-full flex flex-col items-center text-center">
-                <div class="text-6xl mb-4">🦇</div>
-                <h2 class="text-2xl font-black text-yellow-400 mb-2 uppercase tracking-tighter">¿CÓMO TE LLAMAS?</h2>
-                <p class="text-indigo-300 mb-6 text-sm font-bold">Ingresa tu nombre para el Ranking</p>
-                
-                <input type="text" id="player-name-input" placeholder="Tu nombre (Opcional)" maxlength="12" class="w-full text-center px-4 py-4 rounded-xl text-indigo-900 font-black text-xl mb-6 border-4 border-indigo-500 focus:outline-none focus:border-yellow-400">
-                
-                <button id="btn-submit-name" class="btn-retro bg-indigo-600 text-white font-black text-2xl py-5 px-8 rounded-2xl w-full">
-                    CONTINUAR 🚀
-                </button>
-            </div>
-
-            <!-- PASO C: SENSORES -->
-            <div id="step-sensors" class="hidden w-full text-center">
-                <div class="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.5)]">
-                    <span class="text-5xl">🦇</span>
-                </div>
-                <h2 class="text-emerald-400 mb-8 font-black text-2xl uppercase">¡ESTÁS LISTO!</h2>
-                <button onclick="startSensors()" class="btn-retro bg-emerald-500 text-white font-black text-2xl py-6 px-10 rounded-2xl w-full">
-                    ¡COMENZAR VUELO!
-                </button>
-            </div>
-
-            <!-- PASO D: JUGANDO -->
-            <div id="step-play" class="hidden flex-col items-center w-full flex-1 justify-center">
-                <button id="btn-flap" class="btn-retro bg-indigo-600 text-white font-black text-4xl py-16 px-6 rounded-[3rem] w-full flex flex-col items-center gap-4">
-                    <span class="text-7xl">✨</span>
-                    <span>¡ALETEAR!</span>
-                </button>
-                <p class="mt-8 text-indigo-300 text-sm font-black uppercase tracking-widest text-center">¡Sacude el móvil o presiona el botón para subir!</p>
-            </div>
-            
-            <p class="mt-8 text-[10px] text-indigo-500 font-bold uppercase tracking-[0.2em]">N. Muñoz Saez • Ing. Informático</p>
+        <!-- Botones de Acción (Volver / Silencio) -->
+        <div class="flex gap-2 pointer-events-auto">
+            <button onclick="toggleAudio()" class="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700 flex items-center justify-center hover:bg-slate-800 text-slate-300 transition-colors">
+                <i id="audio-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+            <button onclick="exitToLobby()" class="px-4 py-2 rounded-xl bg-red-600/90 hover:bg-red-500 border border-red-700 flex items-center gap-2 text-sm font-bold text-white transition-colors">
+                <i class="fa-solid fa-door-open"></i> Salir
+            </button>
         </div>
     </div>
 
+    <!-- PANTALLA GAME OVER -->
+    <div id="gameover-screen" class="absolute inset-0 z-40 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center hidden">
+        <span class="text-6xl mb-4 animate-bounce">💥</span>
+        <h2 class="text-4xl font-black text-red-500 mb-1 uppercase tracking-wider">Fin de la Aventura</h2>
+        <p id="gameover-reason" class="text-slate-400 text-sm mb-6"></p>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 w-full max-w-xs mb-8 flex justify-around">
+            <div>
+                <span class="block text-xs text-slate-500 font-bold uppercase">Puntos</span>
+                <span id="final-score" class="text-3xl font-black text-yellow-400">0</span>
+            </div>
+            <div class="border-l border-slate-800"></div>
+            <div>
+                <span class="block text-xs text-slate-500 font-bold uppercase">Máximo</span>
+                <span id="best-score" class="text-3xl font-black text-sky-400">0</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-3 w-full max-w-xs">
+            <button onclick="restartCurrentGame()" class="btn-bounce w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-lg text-white shadow-lg transition-transform border-b-4 border-emerald-800">
+                <i class="fa-solid fa-rotate-right mr-2"></i> Intentar de Nuevo
+            </button>
+            <button onclick="exitToLobby()" class="btn-bounce w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-slate-300 transition-transform">
+                <i class="fa-solid fa-house mr-2"></i> Cambiar Categoría
+            </button>
+        </div>
+    </div>
+
+    <!-- PANTALLA INTRODUCCIÓN DE CONTROLES -->
+    <div id="tutorial-overlay" class="absolute inset-0 z-30 bg-slate-950/80 flex flex-col items-center justify-center p-6 pointer-events-none hidden transition-opacity duration-300">
+        <div id="tutorial-icon" class="text-6xl text-white animate-pulse mb-4">
+            <i class="fa-solid fa-hand-pointer"></i>
+        </div>
+        <p id="tutorial-title" class="text-2xl font-black mb-1 text-center">¡Haz clic o presiona la pantalla!</p>
+        <p id="tutorial-desc" class="text-sm text-slate-400 text-center"></p>
+    </div>
+
+    <!-- CANVAS DEL JUEGO -->
+    <div class="flex-1 w-full h-full relative">
+        <canvas id="gameCanvas" class="w-full h-full"></canvas>
+    </div>
+
+    <!-- SECCIÓN INTERACTIVA DE CONTROL REMOTO (VISTA EXCLUSIVA CELULAR) -->
+    <div id="remote-view" class="fixed inset-0 z-50 bg-slate-950 flex-col items-center justify-between p-6 hidden">
+        <div class="text-center w-full">
+            <h2 class="text-2xl font-black tracking-widest text-sky-400 uppercase">Mando Inclinable</h2>
+            <p id="remote-game-status" class="text-xs text-slate-500 font-semibold mt-1">Conectado a la pantalla de Nasslo</p>
+        </div>
+
+        <!-- Horizonte Artificial / Nivel de Inclinación Visual -->
+        <div class="w-48 h-48 rounded-full level-container border-4 border-slate-700 flex items-center justify-center relative overflow-hidden shadow-2xl">
+            <!-- Línea de horizonte de equilibrio -->
+            <div class="absolute w-full h-[2px] bg-slate-500/50"></div>
+            <!-- Burbuja interactiva -->
+            <div id="level-bubble" class="w-16 h-16 rounded-full bg-sky-400 border-2 border-white shadow-[0_0_15px_rgba(56,189,248,0.7)] transition-all duration-75 absolute transform -translate-x-1/2 -translate-y-1/2" style="top: 50%; left: 50%;"></div>
+        </div>
+
+        <!-- Zona de Impulso Alternativa Táctil -->
+        <div class="w-full max-w-sm flex flex-col gap-3">
+            <div class="grid grid-cols-2 gap-2">
+                <!-- Calibrar dispositivo -->
+                <button id="btn-calibrate" onclick="calibrateDevice()" class="py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-xs font-black rounded-xl border border-slate-700 uppercase tracking-wider text-slate-300 transition-all flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-compass-drafting"></i> Calibrar
+                </button>
+                <!-- Tomar Foto para la Cara del Personaje -->
+                <button id="btn-camera" onclick="triggerCameraInput()" class="py-3 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-xs font-black rounded-xl border border-indigo-700 uppercase tracking-wider text-white transition-all flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-camera animate-pulse"></i> <span id="camera-btn-text">Subir Foto</span>
+                </button>
+            </div>
+            <!-- Entrada de archivo oculta diseñada para activar la cámara del celular -->
+            <input id="camera-file-input" type="file" accept="image/*" capture="user" class="hidden" onchange="processCapturedPhoto(event)">
+
+            <!-- Botón Gigante de Toque/Aleteo -->
+            <button id="btn-tap-jump" class="h-24 bg-gradient-to-b from-sky-500 to-indigo-600 active:from-sky-400 active:to-indigo-500 text-white rounded-2xl font-black text-lg shadow-lg border-b-4 border-indigo-800 active:border-b-0 transition-all flex flex-col items-center justify-center gap-1 uppercase select-none">
+                <span class="text-2xl"><i class="fa-solid fa-arrow-up-long animate-bounce"></i></span>
+                Dar Impulso / Aletear
+            </button>
+        </div>
+    </div>
+
+    <!-- FIRMA DIGITAL DE NASSLO MUÑOZ -->
+    <div class="fixed bottom-4 right-4 md:bottom-6 md:right-8 opacity-50 hover:opacity-100 transition-opacity duration-500 z-50 print:hidden pointer-events-none select-none">
+        <div class="flex flex-col items-end">
+            <span class="text-[0.65rem] text-gray-400 uppercase tracking-widest font-sans mb-[-4px]" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">Creada por</span>
+            <span class="text-2xl text-gray-200" style="font-family: 'Brush Script MT', 'Lucida Handwriting', 'Great Vibes', cursive; text-shadow: 1px 1px 3px rgba(0,0,0,0.9);">Nasslo Muñoz</span>
+            <span class="text-[0.6rem] text-gray-400 font-sans tracking-widest uppercase mt-1" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">Ingeniero Informático</span>
+        </div>
+    </div>
+
+    <!-- LÓGICA Y MOTOR GRÁFICO DEL JUEGO CON SOPORTE PEERJS -->
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const isController = urlParams.get('role') === 'controller';
-        const hostId = urlParams.get('host');
-        let peer = null, connection = null, videoStream = null;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-        // --- SISTEMA DE AUDIO (MÚSICA Y EFECTOS) ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // --- MÚSICA DE FONDO MP3 ---
-        // Asegúrate de tener el archivo 'bat-music.mp3' en la misma carpeta que este archivo HTML
-        const bgMusic = new Audio('bat-music.mp3');
-        bgMusic.loop = true; // Hace que la música se repita
-        bgMusic.volume = 0.4; // Ajusta el volumen general (0.0 a 1.0)
+        // Estados de Audio y Game Loop
+        let audioEnabled = true;
+        let audioCtx = null;
+        let gameMode = null; // 'volar' o 'nadar'
+        let gameActive = false;
+        let hasStartedPlaying = false;
+        let score = 0;
+        let highScores = { volar: 0, nadar: 0 };
 
-        function playKuek() {
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const filter = audioCtx.createBiquadFilter();
-            const gain = audioCtx.createGain();
+        // Parámetros físicos adaptativos
+        let player = {
+            x: 100,
+            y: 200,
+            radius: 20,
+            velocity: 0,
+            gravity: 0,
+            jumpStrength: 0,
+            damping: 1, 
+            angle: 0
+        };
 
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(450, now);
-            osc.frequency.exponentialRampToValueAtTime(160, now + 0.18);
+        // Arreglos de Entidades
+        let obstacles = [];
+        let particles = [];
+        let bgElements = [];
+        let obstacleTimer = 0;
+        let obstacleSpawnRate = 120; 
 
-            filter.type = 'bandpass';
-            filter.frequency.value = 850;
-            filter.Q.value = 6;
+        // Variables de Control Remoto PeerJS
+        let peer = null;
+        let conn = null;
+        let isRemoteConnected = false;
+        let remoteTiltValue = 0; // -1 (arriba) a 1 (abajo)
+        let calibrationOffset = 0; // Compensación de inclinación inicial
+        let playerFaceImage = null; // Guardará el objeto de imagen con la selfi del jugador en el Host
 
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.4, now + 0.03);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        // Redimensionamiento Inteligente
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (gameActive && !hasStartedPlaying) {
+                player.y = canvas.height / 2;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            osc.start();
-            osc.stop(now + 0.35);
+        // --- SISTEMA DE SÍNTESIS DE AUDIO ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
         }
 
-        function startFunnyMusic() {
-            // Reinicia la canción al segundo cero y la reproduce
-            bgMusic.currentTime = 0;
-            bgMusic.play().catch(e => {
-                console.log("Haz clic en la pantalla del Host una vez para habilitar el audio");
-            });
-        }
+        function playSynthSound(type) {
+            if (!audioEnabled) return;
+            initAudio();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
 
-        // ==========================================
-        //  LÓGICA DEL CONTROLADOR (TELÉFONO MÓVIL)
-        // ==========================================
-        if (isController && hostId) {
-            document.getElementById('view-controller').classList.add('active');
-            const video = document.getElementById('video-feed');
-            const captureCanvas = document.createElement('canvas');
-            const btnCapture = document.getElementById('btn-capture');
-            const btnSubmitName = document.getElementById('btn-submit-name');
-            let capturedPhotoData = null;
-
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
-                .then(stream => { videoStream = stream; video.srcObject = stream; })
-                .catch(() => alert("Por favor, permite el acceso a la cámara para jugar."));
-
-            peer = new Peer();
-            peer.on('open', () => { connection = peer.connect(hostId); });
-
-            // 1. Tomar Foto y pasar a Nombre
-            btnCapture.addEventListener('click', () => {
-                const width = 320;
-                const height = 420; 
-                captureCanvas.width = width;
-                captureCanvas.height = height;
-                const ctx = captureCanvas.getContext('2d');
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.ellipse(width/2, height/2, width * 0.32, height * 0.42, 0, 0, Math.PI * 2);
-                ctx.clip(); 
-
-                ctx.translate(width, 0);
-                ctx.scale(-1, 1); 
-
-                const vW = video.videoWidth;
-                const vH = video.videoHeight;
-                const drawW = vH * (width / height);
-                const startX = (vW - drawW) / 2;
-
-                ctx.drawImage(video, startX, 0, drawW, vH, 0, 0, width, height);
-                ctx.restore();
-
-                capturedPhotoData = captureCanvas.toDataURL('image/png');
-                videoStream?.getTracks().forEach(t => t.stop());
-                
-                document.getElementById('step-camera').classList.add('hidden');
-                document.getElementById('step-name').classList.remove('hidden');
-            });
-
-            // 2. Enviar Nombre + Foto y pasar a Sensores
-            btnSubmitName.addEventListener('click', () => {
-                const playerNameInput = document.getElementById('player-name-input').value.trim();
-                const finalName = playerNameInput !== "" ? playerNameInput : "Anónimo";
-                
-                if(connection?.open) {
-                    // Enviamos todo en un solo paquete de "setup"
-                    connection.send({ type: 'setup', photo: capturedPhotoData, name: finalName });
-                    document.getElementById('step-name').classList.add('hidden');
-                    document.getElementById('step-sensors').classList.remove('hidden');
+                if (type === 'jump_air') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'jump_water') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(80, now);
+                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.25);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'point') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, now); 
+                    osc.frequency.setValueAtTime(880, now + 0.08); 
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'hit') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.linearRampToValueAtTime(20, now + 0.4);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
                 }
+            } catch (e) {
+                console.warn("Audio Context bloqueado o no soportado.");
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const icon = document.getElementById('audio-icon');
+            if (audioEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+                playSynthSound('jump_air');
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-red-500';
+            }
+        }
+
+        // --- SISTEMA DE CONEXIÓN PEERJS (CÓDIGO QR) ---
+        function initHostConnection() {
+            peer = new Peer();
+            
+            peer.on('open', (id) => {
+                const baseUrl = window.location.href.split('?')[0];
+                const controllerUrl = `${baseUrl}?host=${id}`;
+                
+                // Generar QR
+                document.getElementById('qr-code').innerHTML = '';
+                new QRCode(document.getElementById('qr-code'), {
+                    text: controllerUrl,
+                    width: 144,
+                    height: 144,
+                    colorDark: '#0f172a',
+                    colorLight: '#ffffff'
+                });
             });
 
-            window.startSensors = function() {
-                const activate = () => {
-                    window.addEventListener('devicemotion', handleMotion);
-                    document.getElementById('step-sensors').classList.add('hidden');
-                    document.getElementById('step-play').classList.remove('hidden');
-                    document.getElementById('step-play').classList.add('flex');
-                    const btn = document.getElementById('btn-flap');
-                    const flapAction = (e) => { e.preventDefault(); if(connection?.open) connection.send({ type: 'flap' }); };
-                    btn.addEventListener('touchstart', flapAction, {passive: false});
-                    btn.addEventListener('mousedown', flapAction);
-                };
+            peer.on('connection', (connection) => {
+                conn = connection;
+                isRemoteConnected = true;
+                
+                // Notificar HUD en pantalla
+                document.getElementById('remote-badge').classList.remove('hidden');
+                document.getElementById('connection-status').innerHTML = '<span class="text-emerald-400 font-black"><i class="fa-solid fa-circle-check"></i> ¡Control conectado con éxito!</span>';
+                
+                // Escuchar datos del celular
+                conn.on('data', (data) => {
+                    if (data.type === 'tilt') {
+                        remoteTiltValue = data.value;
+                    } else if (data.type === 'jump') {
+                        handleActionInput();
+                    } else if (data.type === 'avatar') {
+                        // Cargar la imagen de la selfi de forma asíncrona en el host
+                        playerFaceImage = new Image();
+                        playerFaceImage.src = data.data;
+                    }
+                });
 
-                if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                    DeviceMotionEvent.requestPermission()
-                        .then(permissionState => { 
-                            if (permissionState === 'granted') { 
-                                activate(); 
-                            } else {
-                                alert("¡Atención! Safari bloqueó el sensor. Reinicia la página y acepta los permisos de movimiento.");
+                conn.on('close', () => {
+                    isRemoteConnected = false;
+                    playerFaceImage = null; // Eliminar foto del jugador anterior
+                    document.getElementById('remote-badge').classList.add('hidden');
+                    document.getElementById('connection-status').innerText = 'Celular desconectado. Escanea de nuevo.';
+                });
+            });
+        }
+
+        // --- PROCESAR ENTRADA DE CELULAR (MÓDULO DE FOTOGRAFÍA INTEGRADO) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const hostId = urlParams.get('host');
+
+        if (hostId) {
+            // El dispositivo se carga en modo mando celular
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('game-hud').style.display = 'none';
+            document.getElementById('gameCanvas').style.display = 'none';
+            
+            const remoteView = document.getElementById('remote-view');
+            remoteView.classList.remove('hidden');
+            remoteView.classList.add('flex');
+
+            // Conectar al servidor principal
+            peer = new Peer();
+            peer.on('open', () => {
+                conn = peer.connect(hostId);
+                
+                conn.on('open', () => {
+                    document.getElementById('remote-game-status').innerHTML = '<span class="text-emerald-400"><i class="fa-solid fa-wifi animate-pulse"></i> ¡Listo! Sube tu foto y empieza a jugar</span>';
+                    
+                    // Activar el acelerómetro / giroscopio
+                    initMotionSensors();
+                });
+            });
+
+            // Configurar botón táctil de respaldo en celular
+            const btnJump = document.getElementById('btn-tap-jump');
+            const triggerJumpEvent = () => {
+                if (conn && conn.open) {
+                    conn.send({ type: 'jump' });
+                }
+            };
+            btnJump.addEventListener('touchstart', (e) => { e.preventDefault(); triggerJumpEvent(); });
+            btnJump.addEventListener('mousedown', triggerJumpEvent);
+
+        } else {
+            // Es pantalla principal, inicializar receptor QR
+            initHostConnection();
+        }
+
+        // --- GESTIÓN DE CÁMARA EN DISPOSITIVO MÓVIL ---
+        function triggerCameraInput() {
+            document.getElementById('camera-file-input').click();
+        }
+
+        function processCapturedPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Reducir la imagen a 128x128 píxeles en un canvas oculto
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = 128;
+                    tempCanvas.height = 128;
+                    const tempCtx = tempCanvas.getContext('2d');
+
+                    // Recorte inteligente de centro cuadrado
+                    const minDim = Math.min(img.width, img.height);
+                    const sx = (img.width - minDim) / 2;
+                    const sy = (img.height - minDim) / 2;
+
+                    tempCtx.drawImage(img, sx, sy, minDim, minDim, 0, 0, 128, 128);
+                    
+                    // Comprimir a JPEG con calidad equilibrada
+                    const compressedBase64 = tempCanvas.toDataURL('image/jpeg', 0.65);
+
+                    // Reemplazar la burbuja de inclinación del giroscopio local con una vista previa de la foto
+                    const bubble = document.getElementById('level-bubble');
+                    bubble.style.backgroundImage = `url(${compressedBase64})`;
+                    bubble.style.backgroundSize = 'cover';
+                    bubble.style.backgroundPosition = 'center';
+                    bubble.classList.remove('bg-sky-400');
+
+                    document.getElementById('camera-btn-text').innerText = "¡Enviada! 📸";
+
+                    // Enviar foto reducida al juego mediante PeerJS
+                    if (conn && conn.open) {
+                        conn.send({ type: 'avatar', data: compressedBase64 });
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- MANEJO DEL ACELERÓMETRO EN DISPOSITIVO MÓVIL ---
+        function initMotionSensors() {
+            // Solicitar permisos en dispositivos iOS modernos
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                const permissionOverlay = document.createElement('div');
+                permissionOverlay.className = 'fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 text-center';
+                permissionOverlay.innerHTML = `
+                    <h2 class="text-2xl font-black mb-4">Permiso de Giroscopio</h2>
+                    <p class="text-sm text-slate-400 max-w-xs mb-8">Necesitamos acceder a los sensores para controlar al personaje con la inclinación.</p>
+                    <button id="grant-btn" class="py-4 px-8 bg-sky-500 font-bold rounded-2xl hover:bg-sky-400 active:scale-95 transition-all uppercase tracking-wide">Activar Sensores 📱</button>
+                `;
+                document.body.appendChild(permissionOverlay);
+
+                document.getElementById('grant-btn').addEventListener('click', () => {
+                    DeviceOrientationEvent.requestPermission()
+                        .then(response => {
+                            if (response === 'granted') {
+                                window.addEventListener('deviceorientation', handleOrientation);
+                                permissionOverlay.remove();
                             }
                         })
-                        .catch(err => {
-                            alert("Error de sensores: Recuerda que en iPhone debes abrir este juego usando HTTPS (conexión segura).");
-                            console.error(err);
-                        });
-                } else { 
-                    activate(); 
-                }
-            };
-
-            let lastFlap = 0;
-            function handleMotion(e) {
-                let acc = e.accelerationIncludingGravity;
-                if (!acc || !connection?.open) return;
-                if (Math.abs(acc.y) > 13 || Math.abs(acc.z) > 13) {
-                    const now = Date.now();
-                    if (now - lastFlap > 200) { connection.send({ type: 'flap' }); lastFlap = now; }
-                }
-            }
-        } 
-        
-        // ==========================================
-        //  LÓGICA DEL HOST (PANTALLA PRINCIPAL)
-        // ==========================================
-        else {
-            document.getElementById('view-host-wait').classList.add('active');
-            peer = new Peer();
-            peer.on('open', (id) => {
-                const url = `${window.location.href.split('?')[0]}?role=controller&host=${id}`;
-                new QRCode(document.getElementById("qrcode"), { text: url, width: 180, height: 180 });
-            });
-
-            // Variables de estado del Host
-            let currentPlayerName = "Anónimo";
-            let leaderboard = []; // Arreglo para guardar el ranking en la memoria
-
-            peer.on('connection', (conn) => {
-                connection = conn;
-                document.getElementById('host-status').innerText = "¡SISTEMA LISTO! 🦇";
-                
-                conn.on('data', (payload) => {
-                    // Recibir la configuración inicial (Foto + Nombre)
-                    if (payload.type === 'setup') {
-                        currentPlayerName = payload.name;
-                        document.getElementById('display-player-name').innerText = currentPlayerName;
-
-                        const img = new Image();
-                        img.onload = () => {
-                            customHead = img;
-                            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-                            document.getElementById('view-host-game').classList.add('active');
-                            if (audioCtx.state === 'suspended') audioCtx.resume();
-                            startFunnyMusic();
-                            resetGame();
-                        };
-                        img.src = payload.photo;
-                    }
-                    if (payload.type === 'flap') { 
-                        if (isGameOver) resetGame(); else bat.flap(); 
-                    }
+                        .catch(console.error);
                 });
-            });
+            } else {
+                // Navegadores ordinarios (Android)
+                window.addEventListener('deviceorientation', handleOrientation);
+            }
+        }
 
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            let frames = 0, score = 0, isGameOver = false, customHead = null;
+        function calibrateDevice() {
+            calibrationOffset = currentRawBeta;
+            const btn = document.getElementById('btn-calibrate');
+            btn.innerHTML = '<i class="fa-solid fa-compass"></i> Calibrado';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-compass-drafting"></i> Calibrar';
+            }, 1500);
+        }
+
+        let currentRawBeta = 0;
+        function handleOrientation(event) {
+            let beta = event.beta; // Inclinación adelante-atrás (-180 a 180)
+            currentRawBeta = beta;
+
+            // Restar la calibración
+            let adjustedBeta = beta - calibrationOffset;
+
+            // Normalizar a un rango útil para el juego (ejemplo: inclinación cómoda de -25 a 25 grados)
+            let maxTiltAngle = 20;
+            let normalizedValue = adjustedBeta / maxTiltAngle;
+
+            // Asegurar límites entre -1 y 1
+            normalizedValue = Math.max(-1, Math.min(1, normalizedValue));
+
+            // Actualizar la burbuja visual del nivel en pantalla del celular
+            const bubble = document.getElementById('level-bubble');
+            const offsetPx = normalizedValue * 70; // Escalar movimiento a píxeles
+            bubble.style.transform = `translate(-50%, calc(-50% + ${offsetPx}px))`;
+
+            // Enviar valor al juego principal de forma continua
+            if (conn && conn.open) {
+                conn.send({ type: 'tilt', value: normalizedValue });
+            }
+        }
+
+        // --- CARGAR JUEGO ---
+        function startGameMode(mode) {
+            initAudio();
+            gameMode = mode;
+            gameActive = true;
+            hasStartedPlaying = false;
+            score = 0;
+            document.getElementById('score-val').innerText = score;
             
-            let stars = Array.from({length: 100}, () => ({ 
-                x: Math.random() * 1200, 
-                y: Math.random() * 675, 
-                s: Math.random() * 2.5, 
-                o: Math.random(),
-                c: `hsl(${Math.random()*360}, 70%, 80%)`
-            }));
+            // Ocultar Lobby y mostrar HUD
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('opacity-0');
+            document.getElementById('game-hud').classList.add('opacity-100');
+            
+            // Configurar físicas basadas en el medio ambiente
+            player.x = canvas.width * 0.25;
+            player.y = canvas.height / 2;
+            player.velocity = 0;
+            player.angle = 0;
 
-            const bat = {
-                x: 120, y: 300, w: 110, h: 75, velocity: 0, gravity: 0.32, jump: -7.0,
-                draw: function() {
+            if (mode === 'volar') {
+                player.gravity = 0.4;
+                player.jumpStrength = -7.5;
+                player.damping = 1.0; 
+                document.getElementById('tutorial-desc').innerText = isRemoteConnected 
+                    ? "Inclina tu celular hacia arriba/abajo para subir o bajar el murciélago." 
+                    : "Mantén el vuelo del murciélago haciendo clic en pantalla.";
+            } else {
+                player.gravity = 0.18; 
+                player.jumpStrength = -4.5; 
+                player.damping = 0.96; 
+                document.getElementById('tutorial-desc').innerText = isRemoteConnected 
+                    ? "Inclina tu celular hacia arriba/abajo para nadar suavemente." 
+                    : "Nada con elegancia haciendo clic para impulsarte.";
+            }
+
+            // Cambiar icono del tutorial si se usa remoto
+            const tutIcon = document.getElementById('tutorial-icon');
+            const tutTitle = document.getElementById('tutorial-title');
+            if (isRemoteConnected) {
+                tutIcon.innerHTML = '<i class="fa-solid fa-mobile-screen animate-bounce"></i>';
+                tutTitle.innerText = "¡Control remoto activo!";
+            } else {
+                tutIcon.innerHTML = '<i class="fa-solid fa-hand-pointer"></i>';
+                tutTitle.innerText = "¡Haz clic o presiona la pantalla!";
+            }
+
+            obstacles = [];
+            particles = [];
+            bgElements = [];
+            obstacleTimer = 0;
+
+            for (let i = 0; i < 5; i++) {
+                bgElements.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * (canvas.height * 0.7),
+                    size: Math.random() * 80 + 40,
+                    speed: Math.random() * 0.5 + 0.1
+                });
+            }
+
+            // Mostrar el tutorial de control
+            const tutorial = document.getElementById('tutorial-overlay');
+            tutorial.classList.remove('hidden');
+            tutorial.classList.add('opacity-100');
+
+            // Iniciar ciclo de animación
+            requestAnimationFrame(gameLoop);
+        }
+
+        function restartCurrentGame() {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            startGameMode(gameMode);
+        }
+
+        function exitToLobby() {
+            gameActive = false;
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('opacity-100');
+            document.getElementById('game-hud').classList.add('opacity-0');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+            
+            // Forzar actualización de código QR nuevo por seguridad
+            initHostConnection();
+        }
+
+        // --- SISTEMA DE ENTRADA (CLIC / TOQUE / ENTRADA REMOTA) ---
+        function handleActionInput() {
+            if (!gameActive) return;
+
+            if (!hasStartedPlaying) {
+                hasStartedPlaying = true;
+                const tutorial = document.getElementById('tutorial-overlay');
+                tutorial.classList.add('opacity-0');
+                setTimeout(() => tutorial.classList.add('hidden'), 300);
+            }
+
+            // Impulso clásico por clic (también actúa como aleteo de emergencia si se usa remoto)
+            player.velocity = player.jumpStrength;
+
+            if (gameMode === 'volar') {
+                playSynthSound('jump_air');
+                for (let i = 0; i < 3; i++) {
+                    particles.push({
+                        x: player.x,
+                        y: player.y,
+                        vx: -2 - Math.random() * 3,
+                        vy: (Math.random() - 0.5) * 4,
+                        size: Math.random() * 4 + 2,
+                        color: 'rgba(168, 85, 247, 0.6)',
+                        life: 1.0,
+                        decay: 0.05,
+                        type: 'wind'
+                    });
+                }
+            } else {
+                playSynthSound('jump_water');
+                for (let i = 0; i < 6; i++) {
+                    particles.push({
+                        x: player.x - 10,
+                        y: player.y + (Math.random() - 0.5) * 15,
+                        vx: -1 - Math.random() * 2,
+                        vy: -0.5 - Math.random() * 1.5,
+                        size: Math.random() * 5 + 2,
+                        color: 'rgba(186, 230, 253, 0.7)',
+                        life: 1.0,
+                        decay: 0.03,
+                        type: 'bubble'
+                    });
+                }
+            }
+        }
+
+        window.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button')) return;
+            handleActionInput();
+        });
+        
+        window.addEventListener('touchstart', (e) => {
+            if (e.target.closest('button')) return;
+            handleActionInput();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                handleActionInput();
+            }
+        });
+
+        // --- SISTEMA DE PARTÍCULAS ---
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                if (p.type === 'bubble') {
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                } else {
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        // --- DETECCIÓN DE OBSTÁCULOS ---
+        function spawnObstacles() {
+            obstacleTimer++;
+            if (obstacleTimer >= obstacleSpawnRate) {
+                obstacleTimer = 0;
+                
+                const gap = Math.max(160, 250 - (score * 2.5)); 
+                const minHeight = 80;
+                const maxHeight = canvas.height - gap - minHeight;
+                const randomTopHeight = Math.random() * (maxHeight - minHeight) + minHeight;
+
+                if (gameMode === 'volar') {
+                    obstacles.push({
+                        x: canvas.width,
+                        topHeight: randomTopHeight,
+                        bottomY: randomTopHeight + gap,
+                        width: 70,
+                        passed: false,
+                        type: 'cave'
+                    });
+                } else {
+                    const swimHeight = Math.random() * (canvas.height - 180) + 90;
+                    obstacles.push({
+                        x: canvas.width,
+                        y: swimHeight,
+                        width: 90,
+                        height: 60,
+                        passed: false,
+                        type: 'shark',
+                        bobbingOffset: Math.random() * Math.PI * 2, 
+                        speedY: Math.random() * 1.5 + 0.5
+                    });
+                }
+            }
+        }
+
+        // --- MOTOR FÍSICO ADAPTADO AL CELULAR ---
+        function updateGame() {
+            if (!hasStartedPlaying) return;
+
+            if (isRemoteConnected) {
+                // Físicas basadas en el Giroscopio / Inclinación
+                let tiltSpeed = gameMode === 'volar' ? 6 : 4.5;
+                player.velocity = remoteTiltValue * tiltSpeed;
+                player.y += player.velocity;
+
+                // Generar burbujas de propulsión de manera pasiva mientras se mueve con giroscopio
+                if (Math.abs(remoteTiltValue) > 0.1 && Math.random() < 0.2) {
+                    particles.push({
+                        x: player.x - 15,
+                        y: player.y + (Math.random() - 0.5) * 10,
+                        vx: -2,
+                        vy: (Math.random() - 0.5) * 1,
+                        size: Math.random() * 4 + 1.5,
+                        color: gameMode === 'volar' ? 'rgba(168,85,247,0.3)' : 'rgba(186, 230, 253, 0.5)',
+                        life: 0.8,
+                        decay: 0.04,
+                        type: gameMode === 'volar' ? 'wind' : 'bubble'
+                    });
+                }
+            } else {
+                // Físicas táctiles / mecánicas tradicionales
+                player.velocity += player.gravity;
+                player.velocity *= player.damping; 
+                player.y += player.velocity;
+            }
+
+            // Rotación suave del personaje según la velocidad de subida/bajada
+            player.angle = Math.min(Math.PI / 4, Math.max(-Math.PI / 7, player.velocity * 0.08));
+
+            // Colisión con límites de pantalla
+            if (player.y - player.radius < 0) {
+                player.y = player.radius;
+                player.velocity = 0;
+            }
+            if (player.y + player.radius > canvas.height) {
+                triggerGameOver("¡Caíste al fondo del abismo!");
+                return;
+            }
+
+            // Generar burbujas naturales del fondo en océano
+            if (gameMode === 'nadar' && Math.random() < 0.15) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height + 10,
+                    vx: (Math.random() - 0.5) * 1,
+                    vy: -1 - Math.random() * 2,
+                    size: Math.random() * 6 + 1.5,
+                    color: 'rgba(14, 165, 233, 0.3)',
+                    life: 1.0,
+                    decay: 0.015,
+                    type: 'bubble'
+                });
+            }
+
+            // Gestionar Fondos
+            bgElements.forEach(bg => {
+                bg.x -= bg.speed;
+                if (bg.x + bg.size < 0) {
+                    bg.x = canvas.width + bg.size;
+                    bg.y = Math.random() * (canvas.height * 0.7);
+                }
+            });
+
+            // Gestionar Obstáculos (Movimiento y Colisión)
+            const speedMultiplier = 3 + Math.min(6, score * 0.25); 
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x -= speedMultiplier;
+
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                    continue;
+                }
+
+                if (!obs.passed && obs.x + obs.width / 2 < player.x) {
+                    obs.passed = true;
+                    score++;
+                    document.getElementById('score-val').innerText = score;
+                    playSynthSound('point');
+                }
+
+                if (obs.type === 'cave') {
+                    if (player.x + player.radius > obs.x && player.x - player.radius < obs.x + obs.width) {
+                        if (player.y - player.radius < obs.topHeight || player.y + player.radius > obs.bottomY) {
+                            triggerGameOver("Chocaste con los filosos muros de la caverna.");
+                            return;
+                        }
+                    }
+                } else if (obs.type === 'shark') {
+                    obs.y += Math.sin(Date.now() * 0.005 + obs.bobbingOffset) * obs.speedY;
+
+                    const distElementX = Math.abs(player.x - (obs.x + obs.width / 2));
+                    const distElementY = Math.abs(player.y - (obs.y + obs.height / 2));
+
+                    if (distElementX < (obs.width / 2 + player.radius * 0.8) && 
+                        distElementY < (obs.height / 2 + player.radius * 0.8)) {
+                        triggerGameOver("¡Un tiburón te ha devorado!");
+                        return;
+                    }
+                }
+            }
+
+            spawnObstacles();
+        }
+
+        // --- SISTEMA DE RENDERIZACIÓN GRÁFICA ---
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Dibujar Fondos
+            if (gameMode === 'volar') {
+                let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, '#1e1b4b'); 
+                grad.addColorStop(1, '#0f172a'); 
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = 'rgba(168, 85, 247, 0.05)';
+                bgElements.forEach(bg => {
+                    ctx.beginPath();
+                    ctx.arc(bg.x, bg.y, bg.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            } else {
+                let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, '#0284c7'); 
+                grad.addColorStop(0.5, '#0369a1'); 
+                grad.addColorStop(1, '#0f172a'); 
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = 'rgba(15, 118, 110, 0.15)';
+                bgElements.forEach(bg => {
+                    ctx.beginPath();
+                    ctx.ellipse(bg.x, canvas.height, bg.size / 2, bg.size * 2, 0, 0, Math.PI, true);
+                    ctx.fill();
+                });
+            }
+
+            // 2. Partículas
+            updateAndDrawParticles();
+
+            // 3. Obstáculos
+            obstacles.forEach(obs => {
+                if (obs.type === 'cave') {
+                    let gradCave = ctx.createLinearGradient(obs.x, 0, obs.x + obs.width, 0);
+                    gradCave.addColorStop(0, '#475569');
+                    gradCave.addColorStop(0.5, '#64748b');
+                    gradCave.addColorStop(1, '#334155');
+                    ctx.fillStyle = gradCave;
+
+                    ctx.beginPath();
+                    ctx.moveTo(obs.x, 0);
+                    ctx.lineTo(obs.x + obs.width, 0);
+                    ctx.lineTo(obs.x + obs.width * 0.8, obs.topHeight * 0.9);
+                    ctx.lineTo(obs.x + obs.width * 0.5, obs.topHeight); 
+                    ctx.lineTo(obs.x + obs.width * 0.2, obs.topHeight * 0.9);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(obs.x, canvas.height);
+                    ctx.lineTo(obs.x + obs.width, canvas.height);
+                    ctx.lineTo(obs.x + obs.width * 0.8, obs.bottomY + (canvas.height - obs.bottomY) * 0.1);
+                    ctx.lineTo(obs.x + obs.width * 0.5, obs.bottomY); 
+                    ctx.lineTo(obs.x + obs.width * 0.2, obs.bottomY + (canvas.height - obs.bottomY) * 0.1);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(obs.x + obs.width * 0.5, 0);
+                    ctx.lineTo(obs.x + obs.width * 0.5, obs.topHeight);
+                    ctx.moveTo(obs.x + obs.width * 0.5, canvas.height);
+                    ctx.lineTo(obs.x + obs.width * 0.5, obs.bottomY);
+                    ctx.stroke();
+
+                } else if (obs.type === 'shark') {
                     ctx.save();
-                    ctx.translate(this.x + this.w/2, this.y + this.h/2);
-                    ctx.rotate(Math.min(Math.PI/6, Math.max(-Math.PI/6, this.velocity * 0.045)));
-                    let flapAnim = Math.sin(frames * 0.35) * 35;
+                    ctx.translate(obs.x, obs.y);
                     
-                    const wingGrad = ctx.createLinearGradient(-80, 0, 80, 0);
-                    wingGrad.addColorStop(0, '#1e1b4b');
-                    wingGrad.addColorStop(0.5, '#818cf8');
-                    wingGrad.addColorStop(1, '#1e1b4b');
-                    ctx.fillStyle = wingGrad;
-                    
-                    ctx.beginPath(); ctx.moveTo(-15, 0); ctx.quadraticCurveTo(-60, -50 + flapAnim, -100, 0); ctx.lineTo(-55, 25); ctx.fill();
-                    ctx.beginPath(); ctx.moveTo(15, 0); ctx.quadraticCurveTo(60, -50 + flapAnim, 100, 0); ctx.lineTo(55, 25); ctx.fill();
-                    
-                    ctx.fillStyle = "#312e81";
-                    ctx.beginPath(); ctx.ellipse(0, 15, 28, 35, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#475569';
+                    ctx.beginPath();
+                    ctx.ellipse(obs.width / 2, obs.height / 2, obs.width / 2, obs.height / 3, 0, 0, Math.PI * 2);
+                    ctx.fill();
 
-                    if (customHead) {
-                        ctx.save();
-                        ctx.beginPath(); 
-                        ctx.ellipse(0, -42, 38, 48, 0, 0, Math.PI * 2); 
-                        ctx.clip();
-                        ctx.drawImage(customHead, -38, -90, 76, 96);
-                        ctx.restore();
-                        
-                        ctx.fillStyle = "#1e1b4b";
-                        ctx.beginPath(); ctx.moveTo(-15, -80); ctx.lineTo(-35, -125); ctx.lineTo(-5, -95); ctx.fill();
-                        ctx.beginPath(); ctx.moveTo(15, -80); ctx.lineTo(35, -125); ctx.lineTo(5, -95); ctx.fill();
-                    }
+                    ctx.fillStyle = '#334155';
+                    ctx.beginPath();
+                    ctx.moveTo(obs.width * 0.8, obs.height / 2);
+                    ctx.lineTo(obs.width * 1.1, obs.height * 0.1);
+                    ctx.lineTo(obs.width, obs.height / 2);
+                    ctx.lineTo(obs.width * 1.1, obs.height * 0.9);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(obs.width * 0.4, obs.height * 0.2);
+                    ctx.quadraticCurveTo(obs.width * 0.5, -obs.height * 0.2, obs.width * 0.65, -obs.height * 0.1);
+                    ctx.quadraticCurveTo(obs.width * 0.55, obs.height * 0.2, obs.width * 0.5, obs.height * 0.2);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(0, obs.height / 2);
+                    ctx.lineTo(obs.width * 0.2, obs.height * 0.6);
+                    ctx.lineTo(obs.width * 0.3, obs.height / 2);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.fillStyle = '#dc2626';
+                    ctx.beginPath();
+                    ctx.arc(obs.width * 0.25, obs.height * 0.35, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
                     ctx.restore();
-                },
-                update: function() {
-                    this.velocity += this.gravity; this.y += this.velocity;
-                    if (this.y + this.h >= canvas.height - 10) gameOver();
-                    if (this.y <= 0) { this.y = 0; this.velocity = 0; }
-                },
-                flap: function() { this.velocity = this.jump; }
-            };
-
-            const obstacles = {
-                items: [], w: 60, h: 40, dx: 4.5,
-                update: function() {
-                    if (frames % 120 === 0) this.dx += 0.05;
-
-                    if (frames % 85 === 0) {
-                        let yPos = Math.random() * (canvas.height - 150) + 75; 
-                        let speedVariance = Math.random() * 2 - 1; 
-                        
-                        this.items.push({ 
-                            x: canvas.width + 50, 
-                            y: yPos, 
-                            passed: false, 
-                            color: `hsl(${Math.random()*40 + 340}, 90%, 65%)`, 
-                            offset: Math.random() * 100, 
-                            sv: speedVariance, 
-                            waveOffset: Math.random() * Math.PI * 2 
-                        });
-                    }
-
-                    this.items.forEach((p, i) => {
-                        p.x -= (this.dx + p.sv);
-                        p.y += Math.sin(frames * 0.06 + p.waveOffset) * 2;
-
-                        let batHitX = bat.x + 30; let batHitY = bat.y + 20;
-                        let batHitW = bat.w - 60; let batHitH = bat.h - 30;
-
-                        let birdHitX = p.x - this.w/2; let birdHitY = p.y - this.h/2;
-                        let birdHitW = this.w; let birdHitH = this.h;
-
-                        if (batHitX < birdHitX + birdHitW && batHitX + batHitW > birdHitX &&
-                            batHitY < birdHitY + birdHitH && batHitY + batHitH > birdHitY) {
-                            gameOver();
-                        }
-
-                        if (p.x + this.w/2 < bat.x && !p.passed) { 
-                            score++; p.passed = true; 
-                            document.getElementById('score-display').innerText = score; 
-                        }
-                        
-                        if (p.x < -100) this.items.splice(i, 1);
-                    });
-                },
-                draw: function() {
-                    this.items.forEach(p => {
-                        ctx.save();
-                        ctx.translate(p.x, p.y);
-                        
-                        let flap = Math.sin(frames * 0.4 + p.offset) * 20;
-                        
-                        ctx.fillStyle = p.color;
-                        ctx.beginPath();
-                        ctx.moveTo(5, 0);
-                        ctx.quadraticCurveTo(20, -25 + flap, 35, -5 + flap);
-                        ctx.lineTo(5, 5);
-                        ctx.fill();
-
-                        ctx.shadowBlur = 15; ctx.shadowColor = p.color;
-                        ctx.beginPath();
-                        ctx.ellipse(0, 0, 22, 14, 0, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
-
-                        ctx.filter = "brightness(80%)"; 
-                        ctx.beginPath();
-                        ctx.moveTo(0, 0);
-                        ctx.quadraticCurveTo(-15, -30 + flap, -30, -5 + flap);
-                        ctx.lineTo(0, 5);
-                        ctx.fill();
-                        ctx.filter = "none";
-                        
-                        ctx.fillStyle = "#fbbf24"; 
-                        ctx.beginPath();
-                        ctx.moveTo(-20, 0);
-                        ctx.lineTo(-35, 5);
-                        ctx.lineTo(-18, 8);
-                        ctx.fill();
-                        
-                        ctx.fillStyle = "white";
-                        ctx.beginPath();
-                        ctx.arc(-10, -4, 4, 0, Math.PI*2);
-                        ctx.fill();
-                        ctx.fillStyle = "black";
-                        ctx.beginPath();
-                        ctx.arc(-11, -4, 2, 0, Math.PI*2);
-                        ctx.fill();
-                        
-                        ctx.lineWidth = 2;
-                        ctx.strokeStyle = "black";
-                        ctx.beginPath();
-                        ctx.moveTo(-6, -8);
-                        ctx.lineTo(-14, -6);
-                        ctx.stroke();
-
-                        ctx.restore();
-                    });
                 }
-            };
+            });
 
-            function gameOver() {
-                if(!isGameOver) {
-                    playKuek();
-                    bgMusic.pause(); // Pausamos el MP3 al perder
-                    
-                    // --- SISTEMA DE RANKING (Añadir nuevo récord) ---
-                    // Guardamos el récord si es mayor a 0 para no llenar el top con ceros (opcional)
-                    leaderboard.push({ name: currentPlayerName, score: score });
-                    leaderboard.sort((a, b) => b.score - a.score); // Ordenar de mayor a menor puntaje
-                    leaderboard = leaderboard.slice(0, 5); // Quedarse solo con los Top 5
+            // 4. Dibujar Personaje (Con soporte para fotografía de selfi)
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            ctx.rotate(player.angle);
+
+            if (gameMode === 'volar') {
+                const wingOscillation = Math.sin(Date.now() * 0.02) * 15;
+                ctx.fillStyle = '#1e293b'; 
+                
+                ctx.beginPath();
+                ctx.moveTo(-5, 0);
+                ctx.quadraticCurveTo(-25, -20 + wingOscillation, -40, -10 + wingOscillation);
+                ctx.quadraticCurveTo(-25, 5, -5, 10);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(5, 0);
+                ctx.quadraticCurveTo(25, -20 + wingOscillation, 40, -10 + wingOscillation);
+                ctx.quadraticCurveTo(25, 5, 5, 10);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.arc(0, 5, player.radius * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+
+                // DIBUJAR CABEZA DEL MURCIÉLAGO (Con foto o vectorial tradicional)
+                if (playerFaceImage && playerFaceImage.complete) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(0, -6, player.radius * 0.6, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(playerFaceImage, -player.radius * 0.6, -6 - player.radius * 0.6, player.radius * 1.2, player.radius * 1.2);
+                    ctx.restore();
+
+                    // Dibujar Orejitas por encima de la foto
+                    ctx.fillStyle = '#1e293b';
+                    ctx.beginPath();
+                    ctx.moveTo(-6, -11);
+                    ctx.lineTo(-10, -19);
+                    ctx.lineTo(-2, -13);
+                    ctx.moveTo(6, -11);
+                    ctx.lineTo(10, -19);
+                    ctx.lineTo(2, -13);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#1e293b';
+                    ctx.beginPath();
+                    ctx.arc(0, -8, player.radius * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(-8, -12);
+                    ctx.lineTo(-12, -22);
+                    ctx.lineTo(-3, -15);
+                    ctx.moveTo(8, -12);
+                    ctx.lineTo(12, -22);
+                    ctx.lineTo(3, -15);
+                    ctx.fill();
+
+                    // Ojitos brillantes
+                    ctx.fillStyle = '#facc15'; 
+                    ctx.beginPath();
+                    ctx.arc(-3, -8, 2, 0, Math.PI * 2);
+                    ctx.arc(3, -8, 2, 0, Math.PI * 2);
+                    ctx.fill();
                 }
+            } else {
+                ctx.fillStyle = '#38bdf8'; 
                 
-                isGameOver = true;
-                
-                // Fondo semi-transparente
-                ctx.fillStyle = "rgba(2, 6, 23, 0.95)"; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                // Texto de final de partida
-                ctx.textAlign = "center";
-                ctx.fillStyle = "#fbbf24"; ctx.font = "bold 60px Chango"; 
-                ctx.fillText("¡BAT-KUEK!", canvas.width/2, canvas.height/2 - 200);
-                
-                ctx.fillStyle = "#fff"; ctx.font = "bold 32px Nunito";
-                ctx.fillText(`PUNTAJE FINAL: ${score}`, canvas.width/2, canvas.height/2 - 130);
-                
-                // --- DIBUJAR TABLERO DEL RANKING TOP 5 ---
-                ctx.fillStyle = "rgba(30, 27, 75, 0.8)"; 
-                ctx.fillRect(canvas.width/2 - 250, canvas.height/2 - 80, 500, 280);
-                ctx.strokeStyle = "#6366f1"; ctx.lineWidth = 4;
-                ctx.strokeRect(canvas.width/2 - 250, canvas.height/2 - 80, 500, 280);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, player.radius * 1.5, player.radius * 0.8, 0, 0, Math.PI * 2);
+                ctx.fill();
 
-                ctx.fillStyle = "#facc15"; ctx.font = "bold 28px Chango";
-                ctx.fillText("🏆 RANKING TOP 5 🏆", canvas.width/2, canvas.height/2 - 30);
-                
-                ctx.font = "bold 22px Nunito";
-                ctx.fillStyle = "#fff";
-                
-                leaderboard.forEach((entry, index) => {
-                    let yOffset = canvas.height/2 + 25 + (index * 35);
-                    let medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🦇";
-                    
-                    // Nombre a la izquierda, Puntaje a la derecha
-                    ctx.textAlign = "left";
-                    ctx.fillText(`${medal} ${entry.name}`, canvas.width/2 - 180, yOffset);
-                    ctx.textAlign = "right";
-                    ctx.fillText(`${entry.score} pts`, canvas.width/2 + 180, yOffset);
-                });
+                ctx.fillStyle = '#0284c7';
+                ctx.beginPath();
+                ctx.moveTo(-5, -player.radius * 0.6);
+                ctx.quadraticCurveTo(-15, -player.radius * 1.5, -2, -player.radius * 1.6);
+                ctx.quadraticCurveTo(5, -player.radius * 0.6, 5, -player.radius * 0.6);
+                ctx.closePath();
+                ctx.fill();
 
-                // Mensaje de reinicio
-                ctx.textAlign = "center";
-                ctx.font = "italic 22px Nunito";
-                ctx.fillStyle = "#818cf8";
-                ctx.fillText("¡Sacude el móvil para reintentar!", canvas.width/2, canvas.height - 40);
+                ctx.beginPath();
+                ctx.moveTo(-player.radius * 1.2, 0);
+                ctx.lineTo(-player.radius * 2.2, -player.radius * 0.8);
+                ctx.lineTo(-player.radius * 1.8, 0);
+                ctx.lineTo(-player.radius * 2.2, player.radius * 0.8);
+                ctx.closePath();
+                ctx.fill();
+
+                // CABEZA / ROSTRO DEL DELFÍN (Con foto o vectorial tradicional)
+                if (playerFaceImage && playerFaceImage.complete) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(player.radius * 0.5, -player.radius * 0.1, player.radius * 0.45, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(playerFaceImage, player.radius * 0.5 - player.radius * 0.45, -player.radius * 0.1 - player.radius * 0.45, player.radius * 0.9, player.radius * 0.9);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(player.radius * 0.7, -player.radius * 0.2, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(player.radius * 0.75, -player.radius * 0.2, 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#7dd3fc';
+                    ctx.beginPath();
+                    ctx.ellipse(player.radius * 1.4, player.radius * 0.1, 10, 5, 0.1, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
 
-            function resetGame() {
-                bat.y = 250; bat.velocity = 0; obstacles.items = []; obstacles.dx = 4.5; score = 0; frames = 0; isGameOver = false;
-                document.getElementById('score-display').innerText = score; 
-                startFunnyMusic();
-                loop();
+            ctx.restore();
+        }
+
+        // --- SISTEMA DE FIN DE PARTIDA ---
+        function triggerGameOver(reason) {
+            gameActive = false;
+            playSynthSound('hit');
+
+            if (score > highScores[gameMode]) {
+                highScores[gameMode] = score;
             }
 
-            function loop() {
-                if (isGameOver) return;
-                const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 50, canvas.width/2, canvas.height/2, 600);
-                grad.addColorStop(0, '#1e1b4b');
-                grad.addColorStop(1, '#020617');
-                ctx.fillStyle = grad; 
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                stars.forEach(s => {
-                    s.x -= 0.8; if(s.x < 0) s.x = 1200; 
-                    ctx.fillStyle = s.c;
-                    ctx.globalAlpha = 0.3 + Math.sin(frames*0.06 + s.o)*0.6;
-                    ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI*2); ctx.fill();
-                    ctx.globalAlpha = 1;
-                });
+            document.getElementById('gameover-reason').innerText = reason;
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('best-score').innerText = highScores[gameMode];
 
-                ctx.shadowBlur = 40; ctx.shadowColor = "rgba(253, 230, 138, 0.4)";
-                ctx.fillStyle = "#fef3c7"; ctx.beginPath(); ctx.arc(1050, 100, 65, 0, Math.PI*2); ctx.fill();
-                ctx.shadowBlur = 0;
+            const screen = document.getElementById('gameover-screen');
+            screen.classList.remove('hidden');
+            screen.classList.add('flex');
+        }
 
-                obstacles.update(); obstacles.draw(); bat.update(); bat.draw();
-                frames++; requestAnimationFrame(loop);
-            }
+        // --- GAME LOOP ---
+        function gameLoop() {
+            if (!gameActive) return;
+
+            updateGame();
+            drawGame();
+
+            requestAnimationFrame(gameLoop);
         }
     </script>
 </body>
