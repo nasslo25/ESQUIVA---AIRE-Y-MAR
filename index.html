@@ -58,7 +58,7 @@
     <!-- PANTALLA PRINCIPAL: SELECCIÓN DE CATEGORÍA -->
     <div id="lobby-screen" class="absolute inset-0 z-40 bg-slate-950 flex flex-col items-center justify-center p-4 md:p-6 text-center overflow-y-auto">
         <h1 class="text-4xl md:text-6xl font-black mb-2 tracking-tight bg-gradient-to-r from-sky-400 via-teal-400 to-indigo-500 bg-clip-text text-transparent">
-            ESQUIVA-AIRE Y AGUA
+            ECO-ESQUIVA
         </h1>
         <p class="text-slate-400 text-xs md:text-base max-w-md mb-6">
             Elige un ecosistema, desafía las físicas y demuestra tus reflejos esquivando peligros con tu celular o tus propios brazos de manera divertida.
@@ -289,16 +289,25 @@
             gravity: 0,
             jumpStrength: 0,
             damping: 1, 
-            angle: 0
+            angle: 0,
+            // Propiedades de la transformación por comida
+            colorOverride: null,
+            glowColor: null,
+            transformTimer: 0
         };
 
         // Arreglos de Entidades y Progresión de Obstáculos
         let obstacles = [];
         let particles = [];
         let bgElements = [];
+        let foods = []; // Comida coleccionable
+        
         let obstacleTimer = 0;
         let obstacleSpawnRate = 125; 
         let spawnedCount = 0; // Control de secuenciación progresiva infantil
+        
+        let foodTimer = 0;
+        let foodSpawnRate = 180; // Aparición regular de comestibles para el niño
 
         // Sistema de Tolerancia y Rescate del Suelo
         let bottomTimer = 0; 
@@ -379,13 +388,14 @@
                     osc.start(now);
                     osc.stop(now + 0.25);
                 } else if (type === 'point') {
+                    // Sonido alegre de tragar / comer o ganar punto
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(587.33, now); 
-                    osc.frequency.setValueAtTime(880, now + 0.08); 
-                    gain.gain.setValueAtTime(0.08, now);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.frequency.setValueAtTime(520, now); 
+                    osc.frequency.exponentialRampToValueAtTime(950, now + 0.2); 
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
                     osc.start(now);
-                    osc.stop(now + 0.25);
+                    osc.stop(now + 0.2);
                 } else if (type === 'hit') {
                     osc.type = 'sawtooth';
                     osc.frequency.setValueAtTime(110, now);
@@ -751,6 +761,12 @@
             score = 0;
             spawnedCount = 0; 
             bottomTimer = 0; // Reiniciar cuenta de gracia del suelo
+            
+            // Reiniciar transformaciones del personaje
+            player.colorOverride = null;
+            player.glowColor = null;
+            player.transformTimer = 0;
+            
             document.getElementById('score-val').innerText = score;
             
             // Ocultar Lobby y mostrar HUD
@@ -769,16 +785,16 @@
                 player.jumpStrength = -5.8; // Impulso ligero amortiguado
                 player.damping = 0.99; 
                 document.getElementById('tutorial-desc').innerText = isRemoteConnected 
-                    ? "¡Físicas de aire activas! Inclina tu celular arriba/abajo para navegar o aletear." 
-                    : (mode === 'camara_volar' ? "¡Párate frente a la cámara web y aletea tus brazos arriba y abajo para volar!" : "Aletea para mantener al murciélago en el aire haciendo clic o espacio.");
+                    ? "¡Físicas de aire activas! Inclina tu celular arriba/abajo para navegar o aletear. ¡Come frutas y mosquitos!" 
+                    : (mode === 'camara_volar' ? "¡Aletea tus brazos arriba y abajo para volar! ¡Busca las frutas y mosquitos!" : "Aletea para volar haciendo clic. ¡Come frutas y mosquitos para cambiar de color!");
                 if (mode === 'camara_volar') await startPCCamera();
             } else if (mode === 'nadar' || mode === 'camara_nadar') {
                 player.gravity = 0.10; // Flotabilidad de agua extremadamente lenta (Antes: 0.18)
                 player.jumpStrength = -3.2; // Suave nado para niños
                 player.damping = 0.95; // Fricción del agua para flotar con lentitud
                 document.getElementById('tutorial-desc').innerText = isRemoteConnected 
-                    ? "¡Físicas de agua activas! Mueve tu móvil arriba/abajo para nadar." 
-                    : (mode === 'camara_nadar' ? "¡Párate frente a la cámara web y aletea tus brazos arriba y abajo para nadar!" : "Impúlsate para nadar con suavidad haciendo clic en pantalla.");
+                    ? "¡Físicas de agua activas! Mueve tu móvil arriba/abajo para nadar. ¡Atrapa gusanitos y mosquitos!" 
+                    : (mode === 'camara_nadar' ? "¡Aletea tus brazos arriba y abajo para nadar! ¡Busca gusanitos y mosquitos!" : "Impúlsate para nadar con suavidad haciendo clic. ¡Come gusanitos y mosquitos!");
                 if (mode === 'camara_nadar') await startPCCamera();
             }
 
@@ -799,7 +815,10 @@
             obstacles = [];
             particles = [];
             bgElements = [];
+            foods = [];
+            
             obstacleTimer = 0;
+            foodTimer = 0;
 
             for (let i = 0; i < 5; i++) {
                 bgElements.push({
@@ -853,6 +872,7 @@
 
             if (gameMode === 'volar' || gameMode === 'camara_volar') {
                 playSynthSound('jump_air');
+                const pColor = player.colorOverride || 'rgba(168, 85, 247, 0.6)';
                 for (let i = 0; i < 5; i++) {
                     particles.push({
                         x: player.x,
@@ -860,7 +880,7 @@
                         vx: -3 - Math.random() * 4,
                         vy: (Math.random() - 0.5) * 5,
                         size: Math.random() * 6 + 2,
-                        color: 'rgba(168, 85, 247, 0.6)',
+                        color: pColor,
                         life: 1.0,
                         decay: 0.04,
                         type: 'wind'
@@ -868,6 +888,7 @@
                 }
             } else {
                 playSynthSound('jump_water');
+                const pColor = player.colorOverride || 'rgba(186, 230, 253, 0.7)';
                 for (let i = 0; i < 8; i++) {
                     particles.push({
                         x: player.x - 10,
@@ -875,7 +896,7 @@
                         vx: -2 - Math.random() * 3,
                         vy: -0.5 - Math.random() * 2,
                         size: Math.random() * 7 + 2,
-                        color: 'rgba(186, 230, 253, 0.7)',
+                        color: pColor,
                         life: 1.0,
                         decay: 0.025,
                         type: 'bubble'
@@ -923,6 +944,12 @@
                     ctx.strokeStyle = p.color;
                     ctx.lineWidth = 1;
                     ctx.stroke();
+                } else if (p.type === 'sparkle') {
+                    // Partícula en forma de pequeña estrella para transformaciones
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = p.color;
+                    ctx.fill();
                 } else {
                     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                     ctx.fill();
@@ -944,10 +971,6 @@
                     const width = 85; 
 
                     // SECUENCIA DE PROGRESIÓN DETERMINÍSTICA INFANTIL:
-                    // spawnedCount 0, 1, 2: Solamente obstáculos abajo
-                    // spawnedCount 3, 4, 5: Solamente obstáculos arriba
-                    // spawnedCount 6, 7, 8, 9: Alternancia simple (arriba, abajo, arriba, abajo)
-                    // spawnedCount 10+: Obstáculos por ambos lados pero con un espacio garantizado muy amplio
                     if (spawnedCount < 3) {
                         caveType = 'bottom';
                         bottomY = canvas.height - (Math.random() * (canvas.height * 0.22) + 110);
@@ -998,6 +1021,35 @@
             }
         }
 
+        // --- SISTEMA DE GENERACIÓN DE COMIDA COLECCIONABLE ---
+        function spawnFood() {
+            foodTimer++;
+            if (foodTimer >= foodSpawnRate) {
+                foodTimer = 0;
+                let foodType = '';
+                let emoji = '';
+                
+                if (gameMode === 'volar' || gameMode === 'camara_volar') {
+                    // Murciélago come mosquitos y frutas
+                    foodType = Math.random() < 0.5 ? 'mosquito' : 'fruit';
+                    emoji = foodType === 'mosquito' ? '🦟' : ['🍎', '🍌', '🍓', '🍒'][Math.floor(Math.random() * 4)];
+                } else {
+                    // Pez/Delfín come gusanitos y mosquitos
+                    foodType = Math.random() < 0.5 ? 'worm' : 'mosquito';
+                    emoji = foodType === 'worm' ? '🐛' : '🦟';
+                }
+
+                foods.push({
+                    x: canvas.width,
+                    y: Math.random() * (canvas.height - 250) + 120,
+                    type: foodType,
+                    emoji: emoji,
+                    bob: Math.random() * Math.PI * 2,
+                    bobSpeed: 0.05 + Math.random() * 0.02
+                });
+            }
+        }
+
         // --- MOTOR FÍSICO ADAPTADO ---
         function updateGame() {
             if (gameMode === 'camara_volar' || gameMode === 'camara_nadar') {
@@ -1005,6 +1057,32 @@
             }
 
             if (!hasStartedPlaying) return;
+
+            // Actualizar temporizador de transformación
+            if (player.transformTimer > 0) {
+                player.transformTimer--;
+                
+                // Efecto de estela de estrellas mientras está transformado
+                if (Math.random() < 0.15) {
+                    particles.push({
+                        x: player.x - 10,
+                        y: player.y + (Math.random() - 0.5) * 20,
+                        vx: -1.5,
+                        vy: (Math.random() - 0.5) * 2,
+                        size: Math.random() * 5 + 2,
+                        color: player.colorOverride,
+                        life: 0.8,
+                        decay: 0.04,
+                        type: 'sparkle'
+                    });
+                }
+
+                if (player.transformTimer === 0) {
+                    player.colorOverride = null;
+                    player.glowColor = null;
+                    speakText("Regresé a la normalidad");
+                }
+            }
 
             if (isRemoteConnected) {
                 let tiltSpeed = (gameMode === 'volar' || gameMode === 'camara_volar') ? 5.5 : 4.0;
@@ -1018,7 +1096,7 @@
                         vx: -2.5,
                         vy: (Math.random() - 0.5) * 1.5,
                         size: Math.random() * 5 + 1.5,
-                        color: (gameMode === 'volar' || gameMode === 'camara_volar') ? 'rgba(168,85,247,0.3)' : 'rgba(186, 230, 253, 0.5)',
+                        color: player.colorOverride || ((gameMode === 'volar' || gameMode === 'camara_volar') ? 'rgba(168,85,247,0.3)' : 'rgba(186, 230, 253, 0.5)'),
                         life: 0.8,
                         decay: 0.035,
                         type: (gameMode === 'volar' || gameMode === 'camara_volar') ? 'wind' : 'bubble'
@@ -1042,7 +1120,7 @@
             const floorY = canvas.height - player.radius;
             if (player.y >= floorY) {
                 player.y = floorY;
-                player.velocity = 0; // Detener caída para dar apoyo estable
+                player.velocity = 0; // Detener caída para dar apoyo de gracia estable
                 bottomTimer++;
 
                 // Activar aviso de voz una sola vez al entrar en contacto con el suelo
@@ -1051,7 +1129,7 @@
                     speakText(actionVoiceText);
                 }
 
-                // Partículas rojas de alerta amigables
+                // Partículas de alerta
                 if (Math.random() < 0.15) {
                     particles.push({
                         x: player.x,
@@ -1066,13 +1144,12 @@
                     });
                 }
 
-                // Si se agota el tiempo de tolerancia sin saltar/alear, se declara fin del juego
+                // Si se agota el tiempo de tolerancia sin saltar, se declara fin del juego
                 if (bottomTimer >= maxBottomTolerance) {
                     triggerGameOver(gameMode.includes('nadar') ? "¡Te quedaste cansado en el fondo marino!" : "¡Te quedaste descansando en el suelo de la cueva!");
                     return;
                 }
             } else {
-                // Si el jugador salta a tiempo o flota hacia arriba, la cuenta de advertencia se limpia
                 bottomTimer = 0;
             }
 
@@ -1101,6 +1178,7 @@
             // Ajuste de velocidad progresivo muy lento para accesibilidad
             const speedMultiplier = 3.0 + Math.min(6.0, score * 0.20); 
 
+            // --- ACTUALIZACIÓN DE OBSTÁCULOS ---
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 const obs = obstacles[i];
                 obs.x -= speedMultiplier;
@@ -1146,7 +1224,72 @@
                 }
             }
 
+            // --- ACTUALIZACIÓN Y COLISIÓN DE COMIDA ---
+            for (let i = foods.length - 1; i >= 0; i--) {
+                const f = foods[i];
+                f.x -= speedMultiplier;
+                f.bob += f.bobSpeed;
+                f.y += Math.sin(f.bob) * 0.4; // Movimiento ondulado vertical divertido
+
+                if (f.x + 40 < 0) {
+                    foods.splice(i, 1);
+                    continue;
+                }
+
+                // Detectar colisión con el radio del personaje
+                const distFoodX = Math.abs(player.x - f.x);
+                const distFoodY = Math.abs(player.y - f.y);
+                const checkRadius = player.radius + 15;
+
+                if (distFoodX < checkRadius && distFoodY < checkRadius) {
+                    // ¡Comido con éxito!
+                    playSynthSound('point');
+                    player.transformTimer = 300; // Activo por 5 segundos completos (300 frames a 60fps)
+
+                    // Estructurar color de transformación según tipo de alimento y ecosistema
+                    if (gameMode === 'volar' || gameMode === 'camara_volar') {
+                        if (f.type === 'mosquito') {
+                            player.colorOverride = '#4ade80'; // Verde fluorescente
+                            player.glowColor = '#22c55e';
+                            speakText("¡Mosquito nutritivo!");
+                        } else {
+                            player.colorOverride = '#facc15'; // Dorado resplandeciente
+                            player.glowColor = '#eab308';
+                            speakText("¡Fruta deliciosa!");
+                        }
+                    } else {
+                        if (f.type === 'worm') {
+                            player.colorOverride = '#f43f5e'; // Rosa Rubí brillante
+                            player.glowColor = '#be123c';
+                            speakText("¡Gusanito rico!");
+                        } else {
+                            player.colorOverride = '#22d3ee'; // Azul turquesa neón
+                            player.glowColor = '#0891b2';
+                            speakText("¡Delicioso!");
+                        }
+                    }
+
+                    // Generar explosión de chispas estelares
+                    for (let pIdx = 0; pIdx < 12; pIdx++) {
+                        particles.push({
+                            x: f.x,
+                            y: f.y,
+                            vx: (Math.random() - 0.5) * 6,
+                            vy: (Math.random() - 0.5) * 6,
+                            size: Math.random() * 6 + 2,
+                            color: player.colorOverride,
+                            life: 1.0,
+                            decay: 0.03,
+                            type: 'sparkle'
+                        });
+                    }
+
+                    foods.splice(i, 1);
+                }
+            }
+
             spawnObstacles();
+            spawnFood();
         }
 
         // --- RENDERIZACIÓN GRÁFICA ---
@@ -1184,15 +1327,13 @@
             }
 
             // 2. Partículas
-            updateAndDrawParticles();
-
-            // 3. Obstáculos de Alto Contraste
+            // 3. Obstáculos
             obstacles.forEach(obs => {
                 if (obs.type === 'cave') {
                     let gradCave = ctx.createLinearGradient(obs.x, 0, obs.x + obs.width, 0);
-                    gradCave.addColorStop(0, '#4f46e5'); // Indigo infantil
-                    gradCave.addColorStop(0.5, '#6366f1'); // Azul brillante
-                    gradCave.addColorStop(1, '#4338ca');
+                    gradCave.addColorStop(0, '#475569');
+                    gradCave.addColorStop(0.5, '#64748b');
+                    gradCave.addColorStop(1, '#334155');
                     ctx.fillStyle = gradCave;
 
                     if (obs.caveType === 'top' || obs.caveType === 'both') {
@@ -1205,22 +1346,12 @@
                         ctx.closePath();
                         ctx.fill();
 
-                        // Contorno rosa neón de advertencia clara
-                        ctx.strokeStyle = '#f43f5e';
-                        ctx.lineWidth = 4;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                        ctx.lineWidth = 2;
                         ctx.beginPath();
-                        ctx.moveTo(obs.x, 0);
-                        ctx.lineTo(obs.x + obs.width * 0.2, obs.topHeight * 0.9);
+                        ctx.moveTo(obs.x + obs.width * 0.5, 0);
                         ctx.lineTo(obs.x + obs.width * 0.5, obs.topHeight);
-                        ctx.lineTo(obs.x + obs.width * 0.8, obs.topHeight * 0.9);
-                        ctx.lineTo(obs.x + obs.width, 0);
                         ctx.stroke();
-
-                        // Faro luminoso
-                        ctx.fillStyle = '#facc15';
-                        ctx.beginPath();
-                        ctx.arc(obs.x + obs.width * 0.5, obs.topHeight, 6, 0, Math.PI * 2);
-                        ctx.fill();
                     }
 
                     if (obs.caveType === 'bottom' || obs.caveType === 'both') {
@@ -1233,21 +1364,12 @@
                         ctx.closePath();
                         ctx.fill();
 
-                        ctx.strokeStyle = '#f43f5e';
-                        ctx.lineWidth = 4;
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                        ctx.lineWidth = 2;
                         ctx.beginPath();
-                        ctx.moveTo(obs.x, canvas.height);
-                        ctx.lineTo(obs.x + obs.width * 0.2, obs.bottomY + (canvas.height - obs.bottomY) * 0.1);
+                        ctx.moveTo(obs.x + obs.width * 0.5, canvas.height);
                         ctx.lineTo(obs.x + obs.width * 0.5, obs.bottomY);
-                        ctx.lineTo(obs.x + obs.width * 0.8, obs.bottomY + (canvas.height - obs.bottomY) * 0.1);
-                        ctx.lineTo(obs.x + obs.width, canvas.height);
                         ctx.stroke();
-
-                        // Faro luminoso
-                        ctx.fillStyle = '#facc15';
-                        ctx.beginPath();
-                        ctx.arc(obs.x + obs.width * 0.5, obs.bottomY, 6, 0, Math.PI * 2);
-                        ctx.fill();
                     }
 
                 } else if (obs.type === 'shark') {
@@ -1292,7 +1414,41 @@
                 }
             });
 
-            // 4. Dibujar Personaje
+            // 4. Dibujar Comida Coleccionable (Con burbuja brillante de alto contraste)
+            foods.forEach(f => {
+                ctx.save();
+                
+                // Calcular un efecto de pulso para el tamaño basado en el tiempo
+                const pulse = 1 + Math.sin(Date.now() * 0.006 + f.bob) * 0.12;
+                const baseSize = (gameMode === 'nadar' || gameMode === 'camara_nadar') ? 42 : 36;
+                const currentSize = baseSize * pulse;
+
+                // 4a. Dibujar burbuja/halo protector de luz de fondo
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, currentSize * 0.75, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.28)'; // Fondo blanco semi-transparente de alto contraste
+                ctx.strokeStyle = '#38bdf8'; // Borde azul cian neón muy brillante
+                ctx.lineWidth = 3;
+                
+                // Sombra de brillo neón exterior
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = '#38bdf8';
+                
+                ctx.fill();
+                ctx.stroke();
+
+                // 4b. Dibujar el Emoji encima de la burbuja
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = '#ffffff';
+                ctx.font = `bold ${currentSize}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(f.emoji, f.x, f.y);
+                
+                ctx.restore();
+            });
+
+            // 5. Dibujar Personaje 
             ctx.save();
             ctx.translate(player.x, player.y);
             ctx.rotate(player.angle);
@@ -1300,10 +1456,16 @@
             if (gameMode === 'volar' || gameMode === 'camara_volar') {
                 const wingOscillation = Math.sin(Date.now() * 0.015) * (player.radius * 0.6);
                 
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#d946ef';
+                // Activar sombra resplandeciente exterior si está bajo efecto de comida
+                if (player.transformTimer > 0) {
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = player.glowColor || '#ffffff';
+                } else {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#d946ef';
+                }
 
-                ctx.fillStyle = '#a855f7'; 
+                ctx.fillStyle = player.colorOverride || '#a855f7'; 
                 
                 ctx.beginPath();
                 ctx.moveTo(-player.radius * 0.25, 0);
@@ -1319,7 +1481,7 @@
                 ctx.closePath();
                 ctx.fill();
 
-                ctx.fillStyle = '#6b21a8'; 
+                ctx.fillStyle = player.colorOverride ? player.glowColor : '#6b21a8'; 
                 ctx.beginPath();
                 ctx.arc(0, player.radius * 0.25, player.radius * 0.7, 0, Math.PI * 2);
                 ctx.fill();
@@ -1334,7 +1496,7 @@
                     ctx.drawImage(playerFaceImage, -player.radius * 0.65, -player.radius * 0.3 - player.radius * 0.65, player.radius * 1.3, player.radius * 1.3);
                     ctx.restore();
 
-                    ctx.fillStyle = '#6b21a8';
+                    ctx.fillStyle = player.colorOverride || '#6b21a8';
                     ctx.beginPath();
                     ctx.moveTo(-player.radius * 0.3, -player.radius * 0.65);
                     ctx.lineTo(-player.radius * 0.5, -player.radius * 1.15);
@@ -1344,7 +1506,7 @@
                     ctx.lineTo(player.radius * 0.1, -player.radius * 0.8);
                     ctx.fill();
                 } else {
-                    ctx.fillStyle = '#7e22ce';
+                    ctx.fillStyle = player.colorOverride || '#7e22ce';
                     ctx.beginPath();
                     ctx.arc(0, -player.radius * 0.4, player.radius * 0.55, 0, Math.PI * 2);
                     ctx.fill();
@@ -1377,13 +1539,19 @@
                     ctx.stroke();
                 }
             } else {
-                ctx.fillStyle = '#38bdf8'; 
+                // Delfín/Pez
+                if (player.transformTimer > 0) {
+                    ctx.shadowBlur = 25;
+                    ctx.shadowColor = player.glowColor || '#ffffff';
+                }
+
+                ctx.fillStyle = player.colorOverride || '#38bdf8'; 
                 
                 ctx.beginPath();
                 ctx.ellipse(0, 0, player.radius * 1.6, player.radius * 0.9, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.fillStyle = '#0284c7';
+                ctx.fillStyle = player.colorOverride ? player.glowColor : '#0284c7';
                 ctx.beginPath();
                 ctx.moveTo(-player.radius * 0.25, -player.radius * 0.6);
                 ctx.quadraticCurveTo(-player.radius * 0.75, -player.radius * 1.5, -player.radius * 0.1, -player.radius * 1.6);
@@ -1425,7 +1593,7 @@
 
             ctx.restore();
 
-            // 5. Dibujar interfaz de auxilio/rescate cuando estén tocando el suelo
+            // 6. Dibujar interfaz de auxilio/rescate cuando estén tocando el suelo
             if (bottomTimer > 0) {
                 // Glow rojo pulsante en el borde inferior de la pantalla
                 const pulse = Math.abs(Math.sin(Date.now() * 0.01));
