@@ -21,7 +21,7 @@
         }
         canvas {
             display: block;
-            background-color: #111827;
+            background-color: #0c0a24;
         }
         .btn-bounce:active {
             transform: scale(0.95);
@@ -34,17 +34,34 @@
         button, [role="button"] {
             touch-action: manipulation;
         }
+        .hud-scan-line {
+            background: linear-gradient(
+                to bottom,
+                rgba(6, 182, 212, 0) 0%,
+                rgba(6, 182, 212, 0.15) 50%,
+                rgba(6, 182, 212, 0) 100%
+            );
+            background-size: 100% 200%;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            0% { background-position: 0% -100%; }
+            100% { background-position: 0% 100%; }
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between overflow-hidden relative">
 
+    <!-- Contenedor de Notificaciones -->
+    <div id="toastContainer" class="fixed top-20 right-6 z-50 flex flex-col gap-3 w-80 pointer-events-none"></div>
+
     <!-- PANTALLA PRINCIPAL: SELECCIÓN DE CATEGORÍA -->
     <div id="lobby-screen" class="absolute inset-0 z-40 bg-slate-950 flex flex-col items-center justify-center p-4 md:p-6 text-center overflow-y-auto">
         <h1 class="text-4xl md:text-6xl font-black mb-2 tracking-tight bg-gradient-to-r from-sky-400 via-teal-400 to-indigo-500 bg-clip-text text-transparent">
-            ECO-ESQUIVA
+            ESQUIVA-AIRE Y AGUA
         </h1>
         <p class="text-slate-400 text-xs md:text-base max-w-md mb-6">
-            Elige un ecosistema, desafía las físicas y demuestra tus reflejos esquivando peligros de la naturaleza con tu celular.
+            Elige un ecosistema, desafía las físicas y demuestra tus reflejos esquivando peligros con tu celular o tus propios brazos de manera divertida.
         </p>
 
         <!-- Conexión Celular QR Panel -->
@@ -58,35 +75,61 @@
                 </div>
             </div>
             <p id="connection-status" class="text-[10px] md:text-xs text-slate-400 mt-3 font-semibold text-center">
-                Escanea el código QR para activar el giroscopio y tomar tu foto de piloto.
+                Escanea el código QR para activar el control de giroscopio o espera en esta pantalla.
             </p>
         </div>
 
-        <!-- Tarjetas de Selección -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mb-4">
+        <!-- Tarjetas de Selección (Rejilla adaptada a 4 columnas con modo infantil progresivo) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-5xl mb-4">
             <!-- Modo Volar -->
-            <button onclick="startGameMode('volar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-purple-500/30 hover:border-purple-500 rounded-3xl p-5 md:p-6 transition-all duration-300 text-left flex flex-col justify-between h-36 md:h-40 hover:shadow-[0_0_30px_rgba(168,85,247,0.2)]">
-                <div class="absolute -right-6 -bottom-6 text-8xl md:text-9xl opacity-10 group-hover:opacity-25 transition-opacity duration-300">🦇</div>
+            <button onclick="startGameMode('volar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-purple-500/30 hover:border-purple-500 rounded-3xl p-4 transition-all duration-300 text-left flex flex-col justify-between h-36 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
+                <div class="absolute -right-6 -bottom-6 text-7xl opacity-10 group-hover:opacity-20 transition-opacity">🦇</div>
                 <div class="flex justify-between items-start w-full">
-                    <span class="text-3xl md:text-4xl">🦇</span>
-                    <span class="bg-purple-500/20 text-purple-300 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Flappy Air</span>
+                    <span class="text-3xl">🦇</span>
+                    <span class="bg-purple-500/20 text-purple-300 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Flappy Air</span>
                 </div>
                 <div>
-                    <h2 class="text-lg md:text-xl font-black text-purple-400">Modo Volar</h2>
-                    <p class="text-[10px] md:text-[11px] text-slate-400 mt-0.5">Esquiva estalagmitas y estalactitas aleatorias en una cueva oscura.</p>
+                    <h2 class="text-sm font-black text-purple-400">Modo Volar</h2>
+                    <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Esquiva estalagmitas en cavernas con clics.</p>
                 </div>
             </button>
 
             <!-- Modo Nadar -->
-            <button onclick="startGameMode('nadar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-sky-500/30 hover:border-sky-500 rounded-3xl p-5 md:p-6 transition-all duration-300 text-left flex flex-col justify-between h-36 md:h-40 hover:shadow-[0_0_30px_rgba(14,165,233,0.2)]">
-                <div class="absolute -right-6 -bottom-6 text-8xl md:text-9xl opacity-10 group-hover:opacity-25 transition-opacity duration-300">🐬</div>
+            <button onclick="startGameMode('nadar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-sky-500/30 hover:border-sky-500 rounded-3xl p-4 transition-all duration-300 text-left flex flex-col justify-between h-36 hover:shadow-[0_0_20px_rgba(14,165,233,0.15)]">
+                <div class="absolute -right-6 -bottom-6 text-7xl opacity-10 group-hover:opacity-20 transition-opacity">🐬</div>
                 <div class="flex justify-between items-start w-full">
-                    <span class="text-3xl md:text-4xl">🐬</span>
-                    <span class="bg-sky-500/20 text-sky-300 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Submarino</span>
+                    <span class="text-3xl">🐬</span>
+                    <span class="bg-sky-500/20 text-sky-300 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Submarino</span>
                 </div>
                 <div>
-                    <h2 class="text-lg md:text-xl font-black text-sky-400">Modo Nadar</h2>
-                    <p class="text-[10px] md:text-[11px] text-slate-400 mt-0.5">Esquiva tiburones bajo el mar con físicas de agua fluidas.</p>
+                    <h2 class="text-sm font-black text-sky-400">Modo Nadar</h2>
+                    <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Esquiva tiburones en el mar con clics.</p>
+                </div>
+            </button>
+
+            <!-- Modo Cámara PC: Volar -->
+            <button onclick="startGameMode('camara_volar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-indigo-500/30 hover:border-indigo-500 rounded-3xl p-4 transition-all duration-300 text-left flex flex-col justify-between h-36 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]">
+                <div class="absolute -right-6 -bottom-6 text-7xl opacity-10 group-hover:opacity-20 transition-opacity">🦇</div>
+                <div class="flex justify-between items-start w-full">
+                    <span class="text-3xl">🧍🦇</span>
+                    <span class="bg-indigo-500/20 text-indigo-300 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Cámara PC</span>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black text-indigo-400">Cámara: Volar</h2>
+                    <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Aletea tus brazos arriba y abajo para volar en la cueva.</p>
+                </div>
+            </button>
+
+            <!-- Modo Cámara PC: Nadar -->
+            <button onclick="startGameMode('camara_nadar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-cyan-500/30 hover:border-cyan-500 rounded-3xl p-4 transition-all duration-300 text-left flex flex-col justify-between h-36 hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+                <div class="absolute -right-6 -bottom-6 text-7xl opacity-10 group-hover:opacity-20 transition-opacity">🐬</div>
+                <div class="flex justify-between items-start w-full">
+                    <span class="text-3xl">🧍🐬</span>
+                    <span class="bg-cyan-500/20 text-cyan-300 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Cámara PC</span>
+                </div>
+                <div>
+                    <h2 class="text-sm font-black text-cyan-400">Cámara: Nadar</h2>
+                    <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">Aletea tus brazos arriba y abajo para nadar en el mar.</p>
                 </div>
             </button>
         </div>
@@ -99,6 +142,7 @@
             <span class="text-yellow-400 font-bold"><i class="fa-solid fa-star"></i> Ptos:</span>
             <span id="score-val" class="font-black text-xl">0</span>
             <span id="remote-badge" class="hidden bg-emerald-500/20 text-emerald-400 text-xs font-black px-2 py-0.5 rounded-md border border-emerald-500/30 animate-pulse"><i class="fa-solid fa-mobile animate-bounce"></i> Remoto</span>
+            <span id="camera-badge" class="hidden bg-cyan-500/20 text-cyan-400 text-xs font-black px-2 py-0.5 rounded-md border border-cyan-500/30 animate-pulse"><i class="fa-solid fa-video animate-pulse"></i> Sensor Cámara</span>
         </div>
 
         <!-- Botones de Acción (Volver / Silencio) -->
@@ -141,12 +185,33 @@
     </div>
 
     <!-- PANTALLA INTRODUCCIÓN DE CONTROLES -->
-    <div id="tutorial-overlay" class="absolute inset-0 z-30 bg-slate-950/80 flex flex-col items-center justify-center p-6 pointer-events-none hidden transition-opacity duration-300">
+    <div id="tutorial-overlay" class="absolute inset-0 z-30 bg-slate-950/85 flex flex-col items-center justify-center p-6 pointer-events-none hidden transition-opacity duration-300">
         <div id="tutorial-icon" class="text-6xl text-white animate-pulse mb-4">
             <i class="fa-solid fa-hand-pointer"></i>
         </div>
         <p id="tutorial-title" class="text-2xl font-black mb-1 text-center">¡Haz clic o presiona la pantalla!</p>
-        <p id="tutorial-desc" class="text-sm text-slate-400 text-center"></p>
+        <p id="tutorial-desc" class="text-sm text-slate-400 text-center max-w-md"></p>
+    </div>
+
+    <!-- HUD DE RASTREO CORPORAL POR CÁMARA (Esquina Superior Izquierda en Modo Cámara) -->
+    <div id="pc-camera-hud" class="absolute top-16 left-4 z-30 w-44 bg-slate-900/90 border-2 border-cyan-500/30 rounded-2xl p-2 hidden flex-col gap-1.5 shadow-xl">
+        <span class="text-[9px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span> Sensor de Aleteo
+        </span>
+        <div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-black border border-slate-800">
+            <!-- Video espejo en pantalla -->
+            <video id="webcamPC" class="absolute inset-0 w-full h-full object-cover scale-x-[-1]" autoplay playsinline muted></video>
+            <!-- Líneas de escaneo HUD -->
+            <div class="absolute inset-0 hud-scan-line pointer-events-none"></div>
+            <!-- Zonas de rastreo visualizadas en pantalla -->
+            <div class="absolute inset-y-0 left-0 w-[35%] border-r border-dashed border-cyan-400/40 bg-cyan-400/5"></div>
+            <div class="absolute inset-y-0 right-0 w-[35%] border-l border-dashed border-cyan-400/40 bg-cyan-400/5"></div>
+        </div>
+        <!-- Barra de intensidad de movimiento -->
+        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+            <div id="motion-intensity-bar" class="bg-cyan-400 h-full w-0 transition-all duration-75"></div>
+        </div>
+        <span class="text-[8px] text-slate-500 text-center leading-none">Mueve tus brazos arriba y abajo dentro de las zonas sombreadas</span>
     </div>
 
     <!-- CANVAS DEL JUEGO -->
@@ -154,11 +219,11 @@
         <canvas id="gameCanvas" class="w-full h-full"></canvas>
     </div>
 
-    <!-- SECCIÓN INTERACTIVA DE CONTROL REMOTO (VISTA EXCLUSIVA CELULAR CON BOTONES ULTRA GIGANTES) -->
+    <!-- SECCIÓN INTERACTIVA DE CONTROL REMOTO (VISTA EXCLUSIVA CELULAR) -->
     <div id="remote-view" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-between p-6 hidden">
         <div class="text-center w-full">
             <h2 class="text-3xl font-black tracking-widest text-sky-400 uppercase">Mando Inclinable</h2>
-            <p id="remote-game-status" class="text-sm text-slate-400 font-semibold mt-1">Conectado a la pantalla de Nasslo</p>
+            <p id="remote-game-status" class="text-sm text-slate-400 font-semibold mt-1">Conectando con la pantalla del juego...</p>
         </div>
 
         <!-- Horizonte Artificial / Nivel de Inclinación Visual Más Grande -->
@@ -209,17 +274,17 @@
         // Estados de Audio y Game Loop
         let audioEnabled = true;
         let audioCtx = null;
-        let gameMode = null; // 'volar' o 'nadar'
+        let gameMode = null; // 'volar', 'nadar', 'camara_volar', 'camara_nadar'
         let gameActive = false;
         let hasStartedPlaying = false;
         let score = 0;
-        let highScores = { volar: 0, nadar: 0 };
+        let highScores = { volar: 0, nadar: 0, camara_volar: 0, camara_nadar: 0 };
 
-        // Parámetros físicos adaptativos (Personajes mucho más grandes)
+        // Parámetros físicos adaptativos (Ajustados con gravedades súper suaves para accesibilidad infantil)
         let player = {
             x: 100,
             y: 200,
-            radius: 35, // Incrementado de 20 a 35 para dar el doble de tamaño
+            radius: 35, 
             velocity: 0,
             gravity: 0,
             jumpStrength: 0,
@@ -227,12 +292,17 @@
             angle: 0
         };
 
-        // Arreglos de Entidades
+        // Arreglos de Entidades y Progresión de Obstáculos
         let obstacles = [];
         let particles = [];
         let bgElements = [];
         let obstacleTimer = 0;
-        let obstacleSpawnRate = 120; 
+        let obstacleSpawnRate = 125; 
+        let spawnedCount = 0; // Control de secuenciación progresiva infantil
+
+        // Sistema de Tolerancia y Rescate del Suelo
+        let bottomTimer = 0; 
+        const maxBottomTolerance = 120; // 2 segundos completos de gracia a 60 fps para rescatar al piloto
 
         // Variables de Control Remoto PeerJS
         let peer = null;
@@ -241,6 +311,14 @@
         let remoteTiltValue = 0; // -1 (arriba) a 1 (abajo)
         let calibrationOffset = 0; // Compensación de inclinación inicial
         let playerFaceImage = null; // Guardará el objeto de imagen con la selfi del jugador en el Host
+
+        // Variables de Control por Movimiento de Cámara PC
+        const videoPC = document.getElementById('webcamPC');
+        let pcStream = null;
+        let motionCanvas = document.createElement('canvas');
+        let mctx = motionCanvas.getContext('2d');
+        let prevFrameData = null;
+        let motionTriggered = false;
 
         // Redimensionamiento Inteligente
         function resizeCanvas() {
@@ -252,6 +330,20 @@
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+
+        // Notificaciones visuales personalizadas
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            let colors = type === 'success' ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-100' : 'bg-rose-950/90 border-rose-500/50 text-rose-100';
+            toast.className = `p-4 rounded-xl border shadow-xl backdrop-blur-md transition-all duration-300 toast-enter flex items-center gap-3 ${colors}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-triangle-exclamation text-rose-400'}"></i> <span class="text-xs font-bold">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         // --- SISTEMA DE SÍNTESIS DE AUDIO ---
         function initAudio() {
@@ -272,17 +364,17 @@
 
                 if (type === 'jump_air') {
                     osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(150, now);
-                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
-                    gain.gain.setValueAtTime(0.15, now);
+                    osc.frequency.setValueAtTime(140, now);
+                    osc.frequency.exponentialRampToValueAtTime(280, now + 0.15);
+                    gain.gain.setValueAtTime(0.12, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
                     osc.start(now);
                     osc.stop(now + 0.15);
                 } else if (type === 'jump_water') {
                     osc.type = 'sine';
-                    osc.frequency.setValueAtTime(80, now);
-                    osc.frequency.exponentialRampToValueAtTime(220, now + 0.25);
-                    gain.gain.setValueAtTime(0.25, now);
+                    osc.frequency.setValueAtTime(70, now);
+                    osc.frequency.exponentialRampToValueAtTime(190, now + 0.25);
+                    gain.gain.setValueAtTime(0.20, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
                     osc.start(now);
                     osc.stop(now + 0.25);
@@ -290,15 +382,15 @@
                     osc.type = 'sine';
                     osc.frequency.setValueAtTime(587.33, now); 
                     osc.frequency.setValueAtTime(880, now + 0.08); 
-                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.setValueAtTime(0.08, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
                     osc.start(now);
                     osc.stop(now + 0.25);
                 } else if (type === 'hit') {
                     osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.setValueAtTime(110, now);
                     osc.frequency.linearRampToValueAtTime(20, now + 0.4);
-                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.setValueAtTime(0.25, now);
                     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
                     osc.start(now);
                     osc.stop(now + 0.4);
@@ -316,6 +408,43 @@
                 playSynthSound('jump_air');
             } else {
                 icon.className = 'fa-solid fa-volume-xmark text-red-500';
+            }
+        }
+
+        function speakText(text) {
+            if (!audioEnabled) return;
+            if ('speechSynthesis' in window) {
+                // Cancelar voces previas para evitar retrasos en el juego en tiempo real
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Obtener las voces instaladas en el sistema del usuario
+                const voices = window.speechSynthesis.getVoices();
+                
+                // Buscar acentos latinoamericanos preferentes (es-MX, es-US, es-419) o cualquier español
+                const esVoice = voices.find(v => {
+                    const lang = v.lang.toLowerCase();
+                    return lang === 'es-mx' || lang.includes('es-us') || lang.includes('es-419');
+                }) || voices.find(v => v.lang.toLowerCase().startsWith('es'));
+
+                if (esVoice) {
+                    utterance.voice = esVoice;
+                }
+                
+                utterance.lang = 'es-MX';
+                utterance.rate = 1.15; // Velocidad ligeramente rápida para dar sentido de urgencia
+                utterance.pitch = 1.0;
+                
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Precargar voces del sistema para evitar retrasos de primer clic en Chrome y Safari
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            if (window.speechSynthesis.onvoiceschanged !== undefined) {
+                window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
             }
         }
 
@@ -344,36 +473,46 @@
                 
                 // Notificar HUD en pantalla
                 document.getElementById('remote-badge').classList.remove('hidden');
-                document.getElementById('connection-status').innerHTML = '<span class="text-emerald-400 font-black"><i class="fa-solid fa-circle-check"></i> ¡Control conectado con éxito!</span>';
-                
+                document.getElementById('connection-status').innerHTML = '<span class="text-emerald-400 font-black"><i class="fa-solid fa-circle-check"></i> ¡Control conectado! Mueve el celular para partir</span>';
+                showToast("¡Celular conectado! Inclina tu teléfono para iniciar", "success");
+
                 // Escuchar datos del celular
                 conn.on('data', (data) => {
                     if (data.type === 'tilt') {
                         remoteTiltValue = data.value;
+                        
+                        // Si estamos en el lobby esperando conexión, iniciar el juego automáticamente por inclinación
+                        if (!gameActive && Math.abs(remoteTiltValue) > 0.3) {
+                            startGameMode('volar');
+                        }
                     } else if (data.type === 'jump') {
-                        handleActionInput();
+                        // Iniciar juego automáticamente si pulsa el botón de aletear en el lobby
+                        if (!gameActive) {
+                            startGameMode('volar');
+                        } else {
+                            handleActionInput();
+                        }
                     } else if (data.type === 'avatar') {
-                        // Cargar la imagen de la selfi de forma asíncrona en el host
                         playerFaceImage = new Image();
                         playerFaceImage.src = data.data;
+                        showToast("¡Foto de piloto actualizada!", "success");
                     }
                 });
 
                 conn.on('close', () => {
                     isRemoteConnected = false;
-                    playerFaceImage = null; // Eliminar foto del jugador anterior
+                    playerFaceImage = null; 
                     document.getElementById('remote-badge').classList.add('hidden');
                     document.getElementById('connection-status').innerText = 'Celular desconectado. Escanea de nuevo.';
                 });
             });
         }
 
-        // --- PROCESAR ENTRADA DE CELULAR (MÓDULO DE FOTOGRAFÍA INTEGRADO) ---
+        // --- PROCESAR ENTRADA DE CELULAR ---
         const urlParams = new URLSearchParams(window.location.search);
         const hostId = urlParams.get('host');
 
         if (hostId) {
-            // El dispositivo se carga en modo mando celular
             document.getElementById('lobby-screen').style.display = 'none';
             document.getElementById('game-hud').style.display = 'none';
             document.getElementById('gameCanvas').style.display = 'none';
@@ -388,9 +527,7 @@
                 conn = peer.connect(hostId);
                 
                 conn.on('open', () => {
-                    document.getElementById('remote-game-status').innerHTML = '<span class="text-emerald-400"><i class="fa-solid fa-wifi animate-pulse"></i> ¡Listo! Sube tu foto y empieza a jugar</span>';
-                    
-                    // Activar el acelerómetro / giroscopio
+                    document.getElementById('remote-game-status').innerHTML = '<span class="text-emerald-400"><i class="fa-solid fa-wifi animate-pulse"></i> ¡Conectado! Inclina tu celular para partir</span>';
                     initMotionSensors();
                 });
             });
@@ -406,7 +543,6 @@
             btnJump.addEventListener('mousedown', triggerJumpEvent);
 
         } else {
-            // Es pantalla principal, inicializar receptor QR
             initHostConnection();
         }
 
@@ -423,23 +559,18 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // Reducir la imagen a 128x128 píxeles en un canvas oculto
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = 128;
                     tempCanvas.height = 128;
                     const tempCtx = tempCanvas.getContext('2d');
 
-                    // Recorte inteligente de centro cuadrado
                     const minDim = Math.min(img.width, img.height);
                     const sx = (img.width - minDim) / 2;
                     const sy = (img.height - minDim) / 2;
 
                     tempCtx.drawImage(img, sx, sy, minDim, minDim, 0, 0, 128, 128);
-                    
-                    // Comprimir a JPEG con calidad equilibrada
                     const compressedBase64 = tempCanvas.toDataURL('image/jpeg', 0.65);
 
-                    // Reemplazar la burbuja de inclinación del giroscopio local con una vista previa de la foto
                     const bubble = document.getElementById('level-bubble');
                     bubble.style.backgroundImage = `url(${compressedBase64})`;
                     bubble.style.backgroundSize = 'cover';
@@ -448,7 +579,6 @@
 
                     document.getElementById('camera-btn-text').innerText = "¡Enviada! 📸";
 
-                    // Enviar foto reducida al juego mediante PeerJS
                     if (conn && conn.open) {
                         conn.send({ type: 'avatar', data: compressedBase64 });
                     }
@@ -460,7 +590,6 @@
 
         // --- MANEJO DEL ACELERÓMETRO EN DISPOSITIVO MÓVIL ---
         function initMotionSensors() {
-            // Solicitar permisos en dispositivos iOS modernos
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 const permissionOverlay = document.createElement('div');
                 permissionOverlay.className = 'fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-6 text-center';
@@ -482,7 +611,6 @@
                         .catch(console.error);
                 });
             } else {
-                // Navegadores ordinarios (Android)
                 window.addEventListener('deviceorientation', handleOrientation);
             }
         }
@@ -498,37 +626,131 @@
 
         let currentRawBeta = 0;
         function handleOrientation(event) {
-            let beta = event.beta; // Inclinación adelante-atrás (-180 a 180)
+            let beta = event.beta; 
             currentRawBeta = beta;
-
-            // Restar la calibración
             let adjustedBeta = beta - calibrationOffset;
-
-            // Normalizar a un rango útil para el juego (ejemplo: inclinación cómoda de -20 a 20 grados)
             let maxTiltAngle = 20;
             let normalizedValue = adjustedBeta / maxTiltAngle;
-
-            // Asegurar límites entre -1 y 1
             normalizedValue = Math.max(-1, Math.min(1, normalizedValue));
 
-            // Actualizar la burbuja visual del nivel en pantalla del celular
             const bubble = document.getElementById('level-bubble');
-            const offsetPx = normalizedValue * 70; // Escalar movimiento a píxeles
+            const offsetPx = normalizedValue * 70; 
             bubble.style.transform = `translate(-50%, calc(-50% + ${offsetPx}px))`;
 
-            // Enviar valor al juego principal de forma continua
             if (conn && conn.open) {
                 conn.send({ type: 'tilt', value: normalizedValue });
             }
         }
 
+        // --- GESTIÓN DE CÁMARA WEB PARA CONTROL CORPORAL (SIN TELÉFONO) ---
+        async function startPCCamera() {
+            try {
+                pcStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 320, height: 240, facingMode: 'user' }
+                });
+                videoPC.srcObject = pcStream;
+                videoPC.onloadedmetadata = () => {
+                    videoPC.play().catch(e => console.warn("Fallo de auto-play en video web: ", e));
+                };
+                document.getElementById('pc-camera-hud').classList.remove('hidden');
+                document.getElementById('pc-camera-hud').classList.add('flex');
+                document.getElementById('camera-badge').classList.remove('hidden');
+            } catch (err) {
+                console.error("No se pudo iniciar la cámara del PC:", err);
+                showToast("Error de acceso a la cámara. Se jugará con clics de mouse o espacio.", "error");
+                document.getElementById('pc-camera-hud').classList.add('hidden');
+                document.getElementById('camera-badge').classList.add('hidden');
+            }
+        }
+
+        function stopPCCamera() {
+            if (pcStream) {
+                pcStream.getTracks().forEach(track => track.stop());
+                pcStream = null;
+            }
+            document.getElementById('pc-camera-hud').classList.add('hidden');
+            document.getElementById('camera-badge').classList.add('hidden');
+        }
+
+        // --- SISTEMA DE DETECCIÓN DE MOVIMIENTO DE BRAZOS (ALETEO) ---
+        function processCameraMotion() {
+            if (videoPC.readyState < 2) return;
+
+            const width = 80;
+            const height = 60;
+            
+            motionCanvas.width = width;
+            motionCanvas.height = height;
+
+            // Dibujar cuadro actual de la cámara en el canvas de procesamiento
+            mctx.save();
+            mctx.scale(-1, 1);
+            mctx.drawImage(videoPC, -width, 0, width, height);
+            mctx.restore();
+
+            const currentFrame = mctx.getImageData(0, 0, width, height);
+            const dataCurr = currentFrame.data;
+
+            if (prevFrameData) {
+                const dataPrev = prevFrameData.data;
+                let motionLeft = 0;
+                let motionRight = 0;
+
+                const motionThreshold = 25; // Sensibilidad de diferencias de brillo
+
+                // Analizar píxeles en las zonas laterales de la cuadrícula
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        
+                        const rDiff = Math.abs(dataCurr[idx] - dataPrev[idx]);
+                        const gDiff = Math.abs(dataCurr[idx + 1] - dataPrev[idx + 1]);
+                        const bDiff = Math.abs(dataCurr[idx + 2] - dataPrev[idx + 2]);
+                        const diff = (rDiff + gDiff + bDiff) / 3;
+
+                        if (diff > motionThreshold) {
+                            if (x < width * 0.35 && y < height * 0.8) {
+                                motionLeft++;
+                            }
+                            if (x > width * 0.65 && y < height * 0.8) {
+                                motionRight++;
+                            }
+                        }
+                    }
+                }
+
+                const maxZonePixels = (width * 0.35) * (height * 0.8);
+                const intensityLeft = motionLeft / maxZonePixels;
+                const intensityRight = motionRight / maxZonePixels;
+                const totalIntensity = (intensityLeft + intensityRight) / 2;
+
+                const bar = document.getElementById('motion-intensity-bar');
+                if (bar) {
+                    bar.style.width = `${Math.min(100, totalIntensity * 500)}%`;
+                }
+
+                // Disparo de aleteo suave cómodo para niños
+                const triggerThreshold = 0.10; 
+                if (totalIntensity > triggerThreshold) {
+                    if (!motionTriggered) {
+                        handleActionInput();
+                        motionTriggered = true;
+                        setTimeout(() => { motionTriggered = false; }, 300);
+                    }
+                }
+            }
+            prevFrameData = currentFrame;
+        }
+
         // --- CARGAR JUEGO ---
-        function startGameMode(mode) {
+        async function startGameMode(mode) {
             initAudio();
             gameMode = mode;
             gameActive = true;
             hasStartedPlaying = false;
             score = 0;
+            spawnedCount = 0; 
+            bottomTimer = 0; // Reiniciar cuenta de gracia del suelo
             document.getElementById('score-val').innerText = score;
             
             // Ocultar Lobby y mostrar HUD
@@ -536,34 +758,39 @@
             document.getElementById('game-hud').classList.remove('opacity-0');
             document.getElementById('game-hud').classList.add('opacity-100');
             
-            // Configurar físicas basadas en el medio ambiente
+            // Configurar físicas basadas en el medio ambiente (GRAVEDAD REDUCIDA PARA EVITAR CAÍDAS RÁPIDAS)
             player.x = canvas.width * 0.25;
             player.y = canvas.height / 2;
             player.velocity = 0;
             player.angle = 0;
 
-            if (mode === 'volar') {
-                player.gravity = 0.4;
-                player.jumpStrength = -7.5;
-                player.damping = 1.0; 
+            if (mode === 'volar' || mode === 'camara_volar') {
+                player.gravity = 0.24; // Planeo súper suave de murciélago (Antes: 0.4)
+                player.jumpStrength = -5.8; // Impulso ligero amortiguado
+                player.damping = 0.99; 
                 document.getElementById('tutorial-desc').innerText = isRemoteConnected 
-                    ? "Inclina tu celular hacia arriba/abajo para subir o bajar el murciélago." 
-                    : "Mantén el vuelo del murciélago haciendo clic en pantalla.";
-            } else {
-                player.gravity = 0.18; 
-                player.jumpStrength = -4.5; 
-                player.damping = 0.96; 
+                    ? "¡Físicas de aire activas! Inclina tu celular arriba/abajo para navegar o aletear." 
+                    : (mode === 'camara_volar' ? "¡Párate frente a la cámara web y aletea tus brazos arriba y abajo para volar!" : "Aletea para mantener al murciélago en el aire haciendo clic o espacio.");
+                if (mode === 'camara_volar') await startPCCamera();
+            } else if (mode === 'nadar' || mode === 'camara_nadar') {
+                player.gravity = 0.10; // Flotabilidad de agua extremadamente lenta (Antes: 0.18)
+                player.jumpStrength = -3.2; // Suave nado para niños
+                player.damping = 0.95; // Fricción del agua para flotar con lentitud
                 document.getElementById('tutorial-desc').innerText = isRemoteConnected 
-                    ? "Inclina tu celular hacia arriba/abajo para nadar suavemente." 
-                    : "Nada con elegancia haciendo clic para impulsarte.";
+                    ? "¡Físicas de agua activas! Mueve tu móvil arriba/abajo para nadar." 
+                    : (mode === 'camara_nadar' ? "¡Párate frente a la cámara web y aletea tus brazos arriba y abajo para nadar!" : "Impúlsate para nadar con suavidad haciendo clic en pantalla.");
+                if (mode === 'camara_nadar') await startPCCamera();
             }
 
-            // Cambiar icono del tutorial si se usa remoto
+            // Cambiar icono del tutorial
             const tutIcon = document.getElementById('tutorial-icon');
             const tutTitle = document.getElementById('tutorial-title');
             if (isRemoteConnected) {
                 tutIcon.innerHTML = '<i class="fa-solid fa-mobile-screen animate-bounce"></i>';
-                tutTitle.innerText = "¡Control remoto activo!";
+                tutTitle.innerText = "¡Control remoto conectado!";
+            } else if (mode === 'camara_volar' || mode === 'camara_nadar') {
+                tutIcon.innerHTML = '<i class="fa-solid fa-child-reaching animate-bounce"></i>';
+                tutTitle.innerText = "¡Mueve tus brazos para aletear!";
             } else {
                 tutIcon.innerHTML = '<i class="fa-solid fa-hand-pointer"></i>';
                 tutTitle.innerText = "¡Haz clic o presiona la pantalla!";
@@ -579,7 +806,7 @@
                     x: Math.random() * canvas.width,
                     y: Math.random() * (canvas.height * 0.7),
                     size: Math.random() * 80 + 40,
-                    speed: Math.random() * 0.5 + 0.1
+                    speed: Math.random() * 0.4 + 0.1
                 });
             }
 
@@ -599,12 +826,12 @@
 
         function exitToLobby() {
             gameActive = false;
+            stopPCCamera();
             document.getElementById('gameover-screen').classList.add('hidden');
             document.getElementById('game-hud').classList.remove('opacity-100');
             document.getElementById('game-hud').classList.add('opacity-0');
             document.getElementById('lobby-screen').classList.remove('hidden');
             
-            // Forzar actualización de código QR nuevo por seguridad
             initHostConnection();
         }
 
@@ -619,10 +846,12 @@
                 setTimeout(() => tutorial.classList.add('hidden'), 300);
             }
 
-            // Impulso clásico por clic (también actúa como aleteo de emergencia si se usa remoto)
             player.velocity = player.jumpStrength;
 
-            if (gameMode === 'volar') {
+            // Restablecer inmediatamente la tolerancia de tiempo al actuar
+            bottomTimer = 0;
+
+            if (gameMode === 'volar' || gameMode === 'camara_volar') {
                 playSynthSound('jump_air');
                 for (let i = 0; i < 5; i++) {
                     particles.push({
@@ -656,12 +885,12 @@
         }
 
         window.addEventListener('mousedown', (e) => {
-            if (e.target.closest('button')) return;
+            if (e.target.closest('button') || e.target.closest('#pc-camera-hud')) return;
             handleActionInput();
         });
         
         window.addEventListener('touchstart', (e) => {
-            if (e.target.closest('button')) return;
+            if (e.target.closest('button') || e.target.closest('#pc-camera-hud')) return;
             handleActionInput();
         });
 
@@ -708,27 +937,34 @@
             if (obstacleTimer >= obstacleSpawnRate) {
                 obstacleTimer = 0;
                 
-                if (gameMode === 'volar') {
-                    // Sistema de cavernas 100% aleatorio: Solo Arriba, Solo Abajo o Ambos
-                    const randType = Math.random();
-                    let caveType = 'both';
+                if (gameMode === 'volar' || gameMode === 'camara_volar') {
+                    let caveType = 'bottom';
                     let topHeight = 0;
                     let bottomY = canvas.height;
-                    const width = 85; // Un poco más grueso para encajar con el personaje gigante
+                    const width = 85; 
 
-                    if (randType < 0.35) {
-                        // Caso 1: Solo Estalactita (Arriba)
-                        caveType = 'top';
-                        topHeight = Math.random() * (canvas.height * 0.45) + 120;
-                    } else if (randType < 0.70) {
-                        // Caso 2: Solo Estalagmita (Abajo)
+                    // SECUENCIA DE PROGRESIÓN DETERMINÍSTICA INFANTIL:
+                    // spawnedCount 0, 1, 2: Solamente obstáculos abajo
+                    // spawnedCount 3, 4, 5: Solamente obstáculos arriba
+                    // spawnedCount 6, 7, 8, 9: Alternancia simple (arriba, abajo, arriba, abajo)
+                    // spawnedCount 10+: Obstáculos por ambos lados pero con un espacio garantizado muy amplio
+                    if (spawnedCount < 3) {
                         caveType = 'bottom';
-                        bottomY = canvas.height - (Math.random() * (canvas.height * 0.45) + 120);
+                        bottomY = canvas.height - (Math.random() * (canvas.height * 0.22) + 110);
+                    } else if (spawnedCount < 6) {
+                        caveType = 'top';
+                        topHeight = Math.random() * (canvas.height * 0.22) + 110;
+                    } else if (spawnedCount < 10) {
+                        caveType = (spawnedCount % 2 === 0) ? 'bottom' : 'top';
+                        if (caveType === 'bottom') {
+                            bottomY = canvas.height - (Math.random() * (canvas.height * 0.25) + 110);
+                        } else {
+                            topHeight = Math.random() * (canvas.height * 0.25) + 110;
+                        }
                     } else {
-                        // Caso 3: Ambas en simultáneo (Canal estrecho)
                         caveType = 'both';
-                        const gap = Math.max(190, 260 - (score * 2.5)); // Espacio vertical para cruzar
-                        const minHeight = 90;
+                        const gap = Math.max(240, 300 - (score * 1.5)); // Espacio ultra generoso y seguro para niños
+                        const minHeight = 85;
                         const maxHeight = canvas.height - gap - minHeight;
                         topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
                         bottomY = topHeight + gap;
@@ -744,34 +980,37 @@
                         caveType: caveType
                     });
 
+                    spawnedCount++;
+
                 } else {
-                    // Modo Nadar: Tiburones gigantes flotantes que oscilan
                     const swimHeight = Math.random() * (canvas.height - 240) + 120;
                     obstacles.push({
                         x: canvas.width,
                         y: swimHeight,
-                        width: 120, // Tiburones un poco más grandes para encajar con el delfín gigante
+                        width: 120, 
                         height: 75,
                         passed: false,
                         type: 'shark',
                         bobbingOffset: Math.random() * Math.PI * 2, 
-                        speedY: Math.random() * 1.8 + 0.6
+                        speedY: Math.random() * 1.5 + 0.4
                     });
                 }
             }
         }
 
-        // --- MOTOR FÍSICO ADAPTADO AL CELULAR ---
+        // --- MOTOR FÍSICO ADAPTADO ---
         function updateGame() {
+            if (gameMode === 'camara_volar' || gameMode === 'camara_nadar') {
+                processCameraMotion();
+            }
+
             if (!hasStartedPlaying) return;
 
             if (isRemoteConnected) {
-                // Físicas basadas en el Giroscopio / Inclinación
-                let tiltSpeed = gameMode === 'volar' ? 7.5 : 5.5;
+                let tiltSpeed = (gameMode === 'volar' || gameMode === 'camara_volar') ? 5.5 : 4.0;
                 player.velocity = remoteTiltValue * tiltSpeed;
                 player.y += player.velocity;
 
-                // Generar burbujas o estelas pasivas al desplazarse
                 if (Math.abs(remoteTiltValue) > 0.1 && Math.random() < 0.35) {
                     particles.push({
                         x: player.x - player.radius,
@@ -779,34 +1018,65 @@
                         vx: -2.5,
                         vy: (Math.random() - 0.5) * 1.5,
                         size: Math.random() * 5 + 1.5,
-                        color: gameMode === 'volar' ? 'rgba(168,85,247,0.3)' : 'rgba(186, 230, 253, 0.5)',
+                        color: (gameMode === 'volar' || gameMode === 'camara_volar') ? 'rgba(168,85,247,0.3)' : 'rgba(186, 230, 253, 0.5)',
                         life: 0.8,
                         decay: 0.035,
-                        type: gameMode === 'volar' ? 'wind' : 'bubble'
+                        type: (gameMode === 'volar' || gameMode === 'camara_volar') ? 'wind' : 'bubble'
                     });
                 }
             } else {
-                // Físicas táctiles / mecánicas tradicionales
                 player.velocity += player.gravity;
                 player.velocity *= player.damping; 
                 player.y += player.velocity;
             }
 
-            // Rotación suave del personaje según la velocidad de subida/bajada
             player.angle = Math.min(Math.PI / 4, Math.max(-Math.PI / 7, player.velocity * 0.08));
 
-            // Colisión con límites de pantalla adaptada al radio ampliado
+            // Techo virtual seguro
             if (player.y - player.radius < 0) {
                 player.y = player.radius;
                 player.velocity = 0;
             }
-            if (player.y + player.radius > canvas.height) {
-                triggerGameOver("¡Caíste al fondo del abismo!");
-                return;
+
+            // --- SISTEMA DE TOLERANCIA Y RESCATE EN EL SUELO ---
+            const floorY = canvas.height - player.radius;
+            if (player.y >= floorY) {
+                player.y = floorY;
+                player.velocity = 0; // Detener caída para dar apoyo estable
+                bottomTimer++;
+
+                // Activar aviso de voz una sola vez al entrar en contacto con el suelo
+                if (bottomTimer === 1) {
+                    const actionVoiceText = gameMode.includes('nadar') ? "¡Nada hacia arriba!" : "¡Aletea hacia arriba!";
+                    speakText(actionVoiceText);
+                }
+
+                // Partículas rojas de alerta amigables
+                if (Math.random() < 0.15) {
+                    particles.push({
+                        x: player.x,
+                        y: player.y,
+                        vx: (Math.random() - 0.5) * 4,
+                        vy: -Math.random() * 3,
+                        size: Math.random() * 6 + 2,
+                        color: 'rgba(239, 68, 68, 0.6)', 
+                        life: 0.8,
+                        decay: 0.04,
+                        type: 'warning'
+                    });
+                }
+
+                // Si se agota el tiempo de tolerancia sin saltar/alear, se declara fin del juego
+                if (bottomTimer >= maxBottomTolerance) {
+                    triggerGameOver(gameMode.includes('nadar') ? "¡Te quedaste cansado en el fondo marino!" : "¡Te quedaste descansando en el suelo de la cueva!");
+                    return;
+                }
+            } else {
+                // Si el jugador salta a tiempo o flota hacia arriba, la cuenta de advertencia se limpia
+                bottomTimer = 0;
             }
 
-            // Generar burbujas naturales en el fondo marino
-            if (gameMode === 'nadar' && Math.random() < 0.20) {
+            if ((gameMode === 'nadar' || gameMode === 'camara_nadar') && Math.random() < 0.20) {
                 particles.push({
                     x: Math.random() * canvas.width,
                     y: canvas.height + 10,
@@ -820,7 +1090,6 @@
                 });
             }
 
-            // Gestionar Fondos
             bgElements.forEach(bg => {
                 bg.x -= bg.speed;
                 if (bg.x + bg.size < 0) {
@@ -829,8 +1098,8 @@
                 }
             });
 
-            // Gestionar Obstáculos (Movimiento y Colisión de Radio Mayor)
-            const speedMultiplier = 3.5 + Math.min(7.5, score * 0.28); 
+            // Ajuste de velocidad progresivo muy lento para accesibilidad
+            const speedMultiplier = 3.0 + Math.min(6.0, score * 0.20); 
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 const obs = obstacles[i];
@@ -848,32 +1117,29 @@
                     playSynthSound('point');
                 }
 
-                // COLISIONES OPTIMIZADAS PARA PERSONAJE GRANDE
                 if (obs.type === 'cave') {
-                    // Tolerancia de colisión de 80% del radio para hacerlo justo
-                    if (player.x + player.radius * 0.8 > obs.x && player.x - player.radius * 0.8 < obs.x + obs.width) {
+                    if (player.x + player.radius * 0.75 > obs.x && player.x - player.radius * 0.75 < obs.x + obs.width) {
                         if (obs.caveType === 'top' || obs.caveType === 'both') {
-                            if (player.y - player.radius * 0.8 < obs.topHeight) {
+                            if (player.y - player.radius * 0.75 < obs.topHeight) {
                                 triggerGameOver("Chocaste con las estalactitas de la caverna.");
                                 return;
                             }
                         }
                         if (obs.caveType === 'bottom' || obs.caveType === 'both') {
-                            if (player.y + player.radius * 0.8 > obs.bottomY) {
+                            if (player.y + player.radius * 0.75 > obs.bottomY) {
                                 triggerGameOver("Chocaste con las estalagmitas de la caverna.");
                                 return;
                             }
                         }
                     }
                 } else if (obs.type === 'shark') {
-                    obs.y += Math.sin(Date.now() * 0.005 + obs.bobbingOffset) * obs.speedY;
+                    obs.y += Math.sin(Date.now() * 0.004 + obs.bobbingOffset) * obs.speedY;
 
                     const distElementX = Math.abs(player.x - (obs.x + obs.width / 2));
                     const distElementY = Math.abs(player.y - (obs.y + obs.height / 2));
 
-                    // Colisión ajustada a las proporciones gigantes del jugador y tiburón
-                    if (distElementX < (obs.width / 2 + player.radius * 0.75) && 
-                        distElementY < (obs.height / 2 + player.radius * 0.75)) {
+                    if (distElementX < (obs.width / 2 + player.radius * 0.7) && 
+                        distElementY < (obs.height / 2 + player.radius * 0.7)) {
                         triggerGameOver("¡Un tiburón te ha devorado!");
                         return;
                     }
@@ -883,19 +1149,19 @@
             spawnObstacles();
         }
 
-        // --- SISTEMA DE RENDERIZACIÓN GRÁFICA ---
+        // --- RENDERIZACIÓN GRÁFICA ---
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Dibujar Fondos
-            if (gameMode === 'volar') {
+            // 1. Dibujar Fondos (Visualmente claros para niños)
+            if (gameMode === 'volar' || gameMode === 'camara_volar') {
                 let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-                grad.addColorStop(0, '#1e1b4b'); 
-                grad.addColorStop(1, '#0f172a'); 
+                grad.addColorStop(0, '#2e1065'); // Violeta cósmico alegre
+                grad.addColorStop(1, '#0c0a24'); // Azul claro
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                ctx.fillStyle = 'rgba(168, 85, 247, 0.05)';
+                ctx.fillStyle = 'rgba(217, 70, 239, 0.1)';
                 bgElements.forEach(bg => {
                     ctx.beginPath();
                     ctx.arc(bg.x, bg.y, bg.size, 0, Math.PI * 2);
@@ -920,16 +1186,15 @@
             // 2. Partículas
             updateAndDrawParticles();
 
-            // 3. Obstáculos
+            // 3. Obstáculos de Alto Contraste
             obstacles.forEach(obs => {
                 if (obs.type === 'cave') {
                     let gradCave = ctx.createLinearGradient(obs.x, 0, obs.x + obs.width, 0);
-                    gradCave.addColorStop(0, '#475569');
-                    gradCave.addColorStop(0.5, '#64748b');
-                    gradCave.addColorStop(1, '#334155');
+                    gradCave.addColorStop(0, '#4f46e5'); // Indigo infantil
+                    gradCave.addColorStop(0.5, '#6366f1'); // Azul brillante
+                    gradCave.addColorStop(1, '#4338ca');
                     ctx.fillStyle = gradCave;
 
-                    // Dibujar solo si el obstáculo de arriba está activo
                     if (obs.caveType === 'top' || obs.caveType === 'both') {
                         ctx.beginPath();
                         ctx.moveTo(obs.x, 0);
@@ -940,16 +1205,24 @@
                         ctx.closePath();
                         ctx.fill();
 
-                        // Líneas tectónicas internas
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-                        ctx.lineWidth = 2;
+                        // Contorno rosa neón de advertencia clara
+                        ctx.strokeStyle = '#f43f5e';
+                        ctx.lineWidth = 4;
                         ctx.beginPath();
-                        ctx.moveTo(obs.x + obs.width * 0.5, 0);
+                        ctx.moveTo(obs.x, 0);
+                        ctx.lineTo(obs.x + obs.width * 0.2, obs.topHeight * 0.9);
                         ctx.lineTo(obs.x + obs.width * 0.5, obs.topHeight);
+                        ctx.lineTo(obs.x + obs.width * 0.8, obs.topHeight * 0.9);
+                        ctx.lineTo(obs.x + obs.width, 0);
                         ctx.stroke();
+
+                        // Faro luminoso
+                        ctx.fillStyle = '#facc15';
+                        ctx.beginPath();
+                        ctx.arc(obs.x + obs.width * 0.5, obs.topHeight, 6, 0, Math.PI * 2);
+                        ctx.fill();
                     }
 
-                    // Dibujar solo si el obstáculo de abajo está activo
                     if (obs.caveType === 'bottom' || obs.caveType === 'both') {
                         ctx.beginPath();
                         ctx.moveTo(obs.x, canvas.height);
@@ -960,13 +1233,21 @@
                         ctx.closePath();
                         ctx.fill();
 
-                        // Líneas tectónicas internas
-                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = '#f43f5e';
+                        ctx.lineWidth = 4;
                         ctx.beginPath();
-                        ctx.moveTo(obs.x + obs.width * 0.5, canvas.height);
+                        ctx.moveTo(obs.x, canvas.height);
+                        ctx.lineTo(obs.x + obs.width * 0.2, obs.bottomY + (canvas.height - obs.bottomY) * 0.1);
                         ctx.lineTo(obs.x + obs.width * 0.5, obs.bottomY);
+                        ctx.lineTo(obs.x + obs.width * 0.8, obs.bottomY + (canvas.height - obs.bottomY) * 0.1);
+                        ctx.lineTo(obs.x + obs.width, canvas.height);
                         ctx.stroke();
+
+                        // Faro luminoso
+                        ctx.fillStyle = '#facc15';
+                        ctx.beginPath();
+                        ctx.arc(obs.x + obs.width * 0.5, obs.bottomY, 6, 0, Math.PI * 2);
+                        ctx.fill();
                     }
 
                 } else if (obs.type === 'shark') {
@@ -1011,16 +1292,19 @@
                 }
             });
 
-            // 4. Dibujar Personaje (Con soporte dinámico para el nuevo Radio Ampliado)
+            // 4. Dibujar Personaje
             ctx.save();
             ctx.translate(player.x, player.y);
             ctx.rotate(player.angle);
 
-            if (gameMode === 'volar') {
-                const wingOscillation = Math.sin(Date.now() * 0.02) * (player.radius * 0.6);
-                ctx.fillStyle = '#1e293b'; 
+            if (gameMode === 'volar' || gameMode === 'camara_volar') {
+                const wingOscillation = Math.sin(Date.now() * 0.015) * (player.radius * 0.6);
                 
-                // Ala izquierda proporcional
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#d946ef';
+
+                ctx.fillStyle = '#a855f7'; 
+                
                 ctx.beginPath();
                 ctx.moveTo(-player.radius * 0.25, 0);
                 ctx.quadraticCurveTo(-player.radius * 1.2, -player.radius * 0.8 + wingOscillation, -player.radius * 2.0, -player.radius * 0.4 + wingOscillation);
@@ -1028,7 +1312,6 @@
                 ctx.closePath();
                 ctx.fill();
 
-                // Ala derecha proporcional
                 ctx.beginPath();
                 ctx.moveTo(player.radius * 0.25, 0);
                 ctx.quadraticCurveTo(player.radius * 1.2, -player.radius * 0.8 + wingOscillation, player.radius * 2.0, -player.radius * 0.4 + wingOscillation);
@@ -1036,13 +1319,13 @@
                 ctx.closePath();
                 ctx.fill();
 
-                // Cuerpo proporcional
-                ctx.fillStyle = '#334155';
+                ctx.fillStyle = '#6b21a8'; 
                 ctx.beginPath();
                 ctx.arc(0, player.radius * 0.25, player.radius * 0.7, 0, Math.PI * 2);
                 ctx.fill();
 
-                // CABEZA DEL MURCIÉLAGO (Con foto ampliada o dibujo clásico)
+                ctx.shadowBlur = 0; 
+
                 if (playerFaceImage && playerFaceImage.complete) {
                     ctx.save();
                     ctx.beginPath();
@@ -1051,8 +1334,7 @@
                     ctx.drawImage(playerFaceImage, -player.radius * 0.65, -player.radius * 0.3 - player.radius * 0.65, player.radius * 1.3, player.radius * 1.3);
                     ctx.restore();
 
-                    // Dibujar Orejitas flotando por detrás de la selfi
-                    ctx.fillStyle = '#1e293b';
+                    ctx.fillStyle = '#6b21a8';
                     ctx.beginPath();
                     ctx.moveTo(-player.radius * 0.3, -player.radius * 0.65);
                     ctx.lineTo(-player.radius * 0.5, -player.radius * 1.15);
@@ -1062,7 +1344,7 @@
                     ctx.lineTo(player.radius * 0.1, -player.radius * 0.8);
                     ctx.fill();
                 } else {
-                    ctx.fillStyle = '#1e293b';
+                    ctx.fillStyle = '#7e22ce';
                     ctx.beginPath();
                     ctx.arc(0, -player.radius * 0.4, player.radius * 0.55, 0, Math.PI * 2);
                     ctx.fill();
@@ -1076,22 +1358,31 @@
                     ctx.lineTo(player.radius * 0.15, -player.radius * 0.75);
                     ctx.fill();
 
-                    // Ojitos amarillos brillantes
-                    ctx.fillStyle = '#facc15'; 
+                    ctx.fillStyle = '#ffffff'; 
                     ctx.beginPath();
-                    ctx.arc(-player.radius * 0.15, -player.radius * 0.4, player.radius * 0.1, 0, Math.PI * 2);
-                    ctx.arc(player.radius * 0.15, -player.radius * 0.4, player.radius * 0.1, 0, Math.PI * 2);
+                    ctx.arc(-player.radius * 0.18, -player.radius * 0.4, player.radius * 0.15, 0, Math.PI * 2);
+                    ctx.arc(player.radius * 0.18, -player.radius * 0.4, player.radius * 0.15, 0, Math.PI * 2);
                     ctx.fill();
+
+                    ctx.fillStyle = '#2563eb';
+                    ctx.beginPath();
+                    ctx.arc(-player.radius * 0.15, -player.radius * 0.4, player.radius * 0.07, 0, Math.PI * 2);
+                    ctx.arc(player.radius * 0.21, -player.radius * 0.4, player.radius * 0.07, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(0, -player.radius * 0.25, player.radius * 0.15, 0.1 * Math.PI, 0.9 * Math.PI);
+                    ctx.stroke();
                 }
             } else {
-                ctx.fillStyle = '#38bdf8'; // Azul delfín brillante
+                ctx.fillStyle = '#38bdf8'; 
                 
-                // Cuerpo proporcional
                 ctx.beginPath();
                 ctx.ellipse(0, 0, player.radius * 1.6, player.radius * 0.9, 0, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Aleta dorsal superior proporcional
                 ctx.fillStyle = '#0284c7';
                 ctx.beginPath();
                 ctx.moveTo(-player.radius * 0.25, -player.radius * 0.6);
@@ -1100,7 +1391,6 @@
                 ctx.closePath();
                 ctx.fill();
 
-                // Aleta de cola proporcional
                 ctx.beginPath();
                 ctx.moveTo(-player.radius * 1.2, 0);
                 ctx.lineTo(-player.radius * 2.2, -player.radius * 0.8);
@@ -1109,7 +1399,6 @@
                 ctx.closePath();
                 ctx.fill();
 
-                // CABEZA / ROSTRO DEL DELFÍN (Con foto o rostro vectorial)
                 if (playerFaceImage && playerFaceImage.complete) {
                     ctx.save();
                     ctx.beginPath();
@@ -1135,12 +1424,43 @@
             }
 
             ctx.restore();
+
+            // 5. Dibujar interfaz de auxilio/rescate cuando estén tocando el suelo
+            if (bottomTimer > 0) {
+                // Glow rojo pulsante en el borde inferior de la pantalla
+                const pulse = Math.abs(Math.sin(Date.now() * 0.01));
+                let gradWarning = ctx.createLinearGradient(0, canvas.height - 100, 0, canvas.height);
+                gradWarning.addColorStop(0, `rgba(239, 68, 68, 0)`);
+                gradWarning.addColorStop(1, `rgba(239, 68, 68, ${pulse * 0.65})`);
+                ctx.fillStyle = gradWarning;
+                ctx.fillRect(0, canvas.height - 100, canvas.width, 100);
+
+                // Barra de tiempo de gracia de auxilio
+                const remainingRatio = 1 - (bottomTimer / maxBottomTolerance);
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.roundRect(canvas.width / 2 - 100, canvas.height - 35, 200 * remainingRatio, 8, 4);
+                ctx.fill();
+                
+                // Texto instructivo ultra directo para niños
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'black 22px Nunito, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = '#000000';
+                ctx.shadowBlur = 6;
+                const actionText = gameMode.includes('nadar') ? "¡NADA HACIA ARRIBA! 🐬" : "¡ALETEA RÁPIDO! 🦇";
+                ctx.fillText(actionText, canvas.width / 2, canvas.height - 50);
+                ctx.shadowBlur = 0; // Resetear sombra para otros elementos
+            }
         }
 
         // --- SISTEMA DE FIN DE PARTIDA ---
         function triggerGameOver(reason) {
             gameActive = false;
+            stopPCCamera();
             playSynthSound('hit');
+            
+            speakText("¡Perdiste!");
 
             if (score > highScores[gameMode]) {
                 highScores[gameMode] = score;
