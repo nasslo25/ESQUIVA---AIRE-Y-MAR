@@ -12,6 +12,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- Librería PeerJS para conexión directa de Celular a Pantalla -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <!-- PWA Meta Tags y Manifest -->
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Esquiva">
+    <link rel="apple-touch-icon" href="icono.png">
+    <link rel="manifest" href="manifest.json">
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
         body {
@@ -48,9 +57,46 @@
             0% { background-position: 0% -100%; }
             100% { background-position: 0% 100%; }
         }
+
+        /* Splash Screen Styles */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0f172a; /* bg-slate-900 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        #splash-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        #splash-logo {
+            width: 180px;
+            height: auto;
+            animation: pulseLogo 2s infinite;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+        }
+        @keyframes pulseLogo {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between overflow-hidden relative">
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <img src="icono.png" alt="Despierta Mentes Logo" id="splash-logo" onerror="this.src='https://placehold.co/180x180/1e293b/bae6fd?text=DM'">
+        <p class="text-sky-400 font-black mt-6 tracking-widest uppercase text-sm animate-pulse">Iniciando Aventura...</p>
+    </div>
 
     <!-- Contenedor de Notificaciones -->
     <div id="toastContainer" class="fixed top-20 right-6 z-50 flex flex-col gap-3 w-80 pointer-events-none"></div>
@@ -79,7 +125,7 @@
             </p>
         </div>
 
-        <!-- Tarjetas de Selección (Rejilla adaptada a 4 columnas con modo infantil progresivo) -->
+        <!-- Tarjetas de Selección (Rejilla adaptada a 4 columnas con modo progresivo) -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-5xl mb-4">
             <!-- Modo Volar -->
             <button onclick="startGameMode('volar')" class="btn-bounce group relative overflow-hidden bg-slate-900 border-2 border-purple-500/30 hover:border-purple-500 rounded-3xl p-4 transition-all duration-300 text-left flex flex-col justify-between h-36 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]">
@@ -135,139 +181,138 @@
         </div>
     </div>
 
-    <!-- PANTALLA DE JUEGO HUD -->
-    <div id="game-hud" class="absolute top-4 left-4 right-4 z-30 flex justify-between items-center pointer-events-none opacity-0 transition-opacity duration-500">
-        <!-- Marcador de Puntos -->
-        <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-700 flex items-center gap-3">
-            <span class="text-yellow-400 font-bold"><i class="fa-solid fa-star"></i> Ptos:</span>
-            <span id="score-val" class="font-black text-xl">0</span>
-            <span id="remote-badge" class="hidden bg-emerald-500/20 text-emerald-400 text-xs font-black px-2 py-0.5 rounded-md border border-emerald-500/30 animate-pulse"><i class="fa-solid fa-mobile animate-bounce"></i> Remoto</span>
-            <span id="camera-badge" class="hidden bg-cyan-500/20 text-cyan-400 text-xs font-black px-2 py-0.5 rounded-md border border-cyan-500/30 animate-pulse"><i class="fa-solid fa-video animate-pulse"></i> Sensor Cámara</span>
-        </div>
-
-        <!-- Botones de Acción (Volver / Silencio) -->
-        <div class="flex gap-2 pointer-events-auto">
-            <button onclick="toggleAudio()" class="w-10 h-10 rounded-xl bg-slate-900/80 border border-slate-700 flex items-center justify-center hover:bg-slate-800 text-slate-300 transition-colors">
-                <i id="audio-icon" class="fa-solid fa-volume-high"></i>
-            </button>
-            <button onclick="exitToLobby()" class="px-4 py-2 rounded-xl bg-red-600/90 hover:bg-red-500 border border-red-700 flex items-center gap-2 text-sm font-bold text-white transition-colors">
-                <i class="fa-solid fa-door-open"></i> Salir
-            </button>
+    <!-- FIRMA DIGITAL CORPORATIVA DESPIERTA MENTES -->
+    <div class="fixed bottom-3 right-3 md:bottom-5 md:right-5 opacity-40 hover:opacity-100 transition-opacity duration-500 z-50 print:hidden pointer-events-none select-none">
+        <div class="flex flex-col items-center gap-1">
+            <span class="text-[0.65rem] text-slate-400 uppercase tracking-widest font-sans text-center w-full" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">Creada por</span>
+            <img src="logofirma.png" alt="Despierta Mentes" class="w-24 md:w-32 h-auto object-contain" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));">
         </div>
     </div>
 
-    <!-- PANTALLA GAME OVER -->
-    <div id="gameover-screen" class="absolute inset-0 z-40 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center hidden">
-        <span class="text-6xl mb-4 animate-bounce">💥</span>
-        <h2 class="text-4xl font-black text-red-500 mb-1 uppercase tracking-wider">Fin de la Aventura</h2>
-        <p id="gameover-reason" class="text-slate-400 text-sm mb-6"></p>
+    <!-- ========================================== -->
+    <!-- INTERFAZ DEL JUEGO (CANVAS, HUD, GAMEOVER) -->
+    <!-- ========================================== -->
+    
+    <!-- Canvas Principal -->
+    <canvas id="gameCanvas" class="absolute inset-0 z-10 w-full h-full"></canvas>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 w-full max-w-xs mb-8 flex justify-around">
-            <div>
-                <span class="block text-xs text-slate-500 font-bold uppercase">Puntos</span>
-                <span id="final-score" class="text-3xl font-black text-yellow-400">0</span>
+    <!-- Cámara PC HUD -->
+    <div id="pc-camera-hud" class="hidden absolute top-4 right-4 z-20 flex-col items-end pointer-events-none opacity-60">
+        <video id="webcamPC" class="w-32 h-24 rounded-lg border-2 border-indigo-500 object-cover" muted playsinline></video>
+        <div class="w-full bg-slate-800 h-2 mt-2 rounded-full overflow-hidden"><div id="motion-intensity-bar" class="h-full bg-indigo-400 transition-all duration-75 w-0"></div></div>
+    </div>
+
+    <!-- HUD de Juego (Puntuación y controles) -->
+    <div id="game-hud" class="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500 flex flex-col justify-between p-6">
+        <div class="flex justify-between items-start">
+            <div class="bg-slate-900/80 backdrop-blur-sm border border-slate-700 text-white font-black text-2xl md:text-4xl px-6 py-2 rounded-2xl shadow-lg">
+                <i class="fa-solid fa-star text-yellow-400 mr-2 text-xl md:text-2xl"></i><span id="score-val">0</span>
             </div>
-            <div class="border-l border-slate-800"></div>
-            <div>
-                <span class="block text-xs text-slate-500 font-bold uppercase">Máximo</span>
-                <span id="best-score" class="text-3xl font-black text-sky-400">0</span>
-            </div>
-        </div>
-
-        <div class="flex flex-col gap-3 w-full max-w-xs">
-            <button onclick="restartCurrentGame()" class="btn-bounce w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-lg text-white shadow-lg transition-transform border-b-4 border-emerald-800">
-                <i class="fa-solid fa-rotate-right mr-2"></i> Intentar de Nuevo
-            </button>
-            <button onclick="exitToLobby()" class="btn-bounce w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold text-slate-300 transition-transform">
-                <i class="fa-solid fa-house mr-2"></i> Cambiar Categoría
-            </button>
-        </div>
-    </div>
-
-    <!-- PANTALLA INTRODUCCIÓN DE CONTROLES -->
-    <div id="tutorial-overlay" class="absolute inset-0 z-30 bg-slate-950/85 flex flex-col items-center justify-center p-6 pointer-events-none hidden transition-opacity duration-300">
-        <div id="tutorial-icon" class="text-6xl text-white animate-pulse mb-4">
-            <i class="fa-solid fa-hand-pointer"></i>
-        </div>
-        <p id="tutorial-title" class="text-2xl font-black mb-1 text-center">¡Haz clic o presiona la pantalla!</p>
-        <p id="tutorial-desc" class="text-sm text-slate-400 text-center max-w-md"></p>
-    </div>
-
-    <!-- HUD DE RASTREO CORPORAL POR CÁMARA (Esquina Superior Izquierda en Modo Cámara) -->
-    <div id="pc-camera-hud" class="absolute top-16 left-4 z-30 w-44 bg-slate-900/90 border-2 border-cyan-500/30 rounded-2xl p-2 hidden flex-col gap-1.5 shadow-xl">
-        <span class="text-[9px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span> Sensor de Aleteo
-        </span>
-        <div class="relative aspect-[4/3] rounded-lg overflow-hidden bg-black border border-slate-800">
-            <!-- Video espejo en pantalla -->
-            <video id="webcamPC" class="absolute inset-0 w-full h-full object-cover scale-x-[-1]" autoplay playsinline muted></video>
-            <!-- Líneas de escaneo HUD -->
-            <div class="absolute inset-0 hud-scan-line pointer-events-none"></div>
-            <!-- Zonas de rastreo visualizadas en pantalla -->
-            <div class="absolute inset-y-0 left-0 w-[35%] border-r border-dashed border-cyan-400/40 bg-cyan-400/5"></div>
-            <div class="absolute inset-y-0 right-0 w-[35%] border-l border-dashed border-cyan-400/40 bg-cyan-400/5"></div>
-        </div>
-        <!-- Barra de intensidad de movimiento -->
-        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-            <div id="motion-intensity-bar" class="bg-cyan-400 h-full w-0 transition-all duration-75"></div>
-        </div>
-        <span class="text-[8px] text-slate-500 text-center leading-none">Mueve tus brazos arriba y abajo dentro de las zonas sombreadas</span>
-    </div>
-
-    <!-- CANVAS DEL JUEGO -->
-    <div class="flex-1 w-full h-full relative">
-        <canvas id="gameCanvas" class="w-full h-full"></canvas>
-    </div>
-
-    <!-- SECCIÓN INTERACTIVA DE CONTROL REMOTO (VISTA EXCLUSIVA CELULAR) -->
-    <div id="remote-view" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-between p-6 hidden">
-        <div class="text-center w-full">
-            <h2 class="text-3xl font-black tracking-widest text-sky-400 uppercase">Mando Inclinable</h2>
-            <p id="remote-game-status" class="text-sm text-slate-400 font-semibold mt-1">Conectando con la pantalla del juego...</p>
-        </div>
-
-        <!-- Horizonte Artificial / Nivel de Inclinación Visual Más Grande -->
-        <div class="w-56 h-56 rounded-full level-container border-4 border-slate-700 flex items-center justify-center relative overflow-hidden shadow-2xl my-4">
-            <!-- Línea de horizonte de equilibrio -->
-            <div class="absolute w-full h-[2px] bg-slate-500/50"></div>
-            <!-- Burbuja interactiva aumentada con soporte de foto local -->
-            <div id="level-bubble" class="w-20 h-20 rounded-full bg-sky-400 border-2 border-white shadow-[0_0_20px_rgba(56,189,248,0.8)] transition-transform duration-75 absolute transform -translate-x-1/2 -translate-y-1/2" style="top: 50%; left: 50%;"></div>
-        </div>
-
-        <!-- Zona de Impulso y Controles Extra Grandes -->
-        <div class="w-full max-w-md flex flex-col gap-4">
-            <div class="grid grid-cols-2 gap-3">
-                <!-- Calibrar dispositivo -->
-                <button id="btn-calibrate" onclick="calibrateDevice()" class="py-5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-sm font-black rounded-2xl border border-slate-700 uppercase tracking-wider text-slate-300 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-compass-drafting text-lg"></i> Calibrar
-                </button>
-                <!-- Tomar Foto para la Cara del Personaje -->
-                <button id="btn-camera" onclick="triggerCameraInput()" class="py-5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-sm font-black rounded-2xl border border-indigo-700 uppercase tracking-wider text-white transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-camera text-lg animate-pulse"></i> <span id="camera-btn-text">Subir Foto</span>
+            <div class="flex gap-2">
+                <span id="remote-badge" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-2"><i class="fa-solid fa-mobile-screen"></i> Control Activo</span>
+                <span id="camera-badge" class="hidden bg-indigo-500/20 text-indigo-400 border border-indigo-500/50 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-2"><i class="fa-solid fa-camera"></i> Cámara Activa</span>
+                <button onclick="toggleAudio()" class="pointer-events-auto bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-white w-12 h-12 rounded-2xl shadow-lg flex items-center justify-center transition-transform active:scale-95">
+                    <i id="audio-icon" class="fa-solid fa-volume-high"></i>
                 </button>
             </div>
-            <!-- Entrada de archivo oculta diseñada para activar la cámara del celular -->
-            <input id="camera-file-input" type="file" accept="image/*" capture="user" class="hidden" onchange="processCapturedPhoto(event)">
+        </div>
+    </div>
 
-            <!-- Botón Gigante de Toque/Aleteo para Niños -->
-            <button id="btn-tap-jump" class="h-36 bg-gradient-to-b from-sky-500 to-indigo-600 active:from-sky-400 active:to-indigo-500 text-white rounded-2xl font-black text-2xl shadow-xl border-b-8 border-indigo-800 active:border-b-0 transition-all flex flex-col items-center justify-center gap-2 uppercase select-none">
-                <span class="text-4xl"><i class="fa-solid fa-arrow-up-long animate-bounce"></i></span>
-                ¡DAR IMPULSO!
+    <!-- Tutorial Superpuesto -->
+    <div id="tutorial-overlay" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm opacity-0 transition-opacity duration-300 hidden pointer-events-none">
+        <div class="bg-slate-900 border-2 border-sky-500 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_40px_rgba(14,165,233,0.3)] animate-bounce">
+            <div id="tutorial-icon" class="text-6xl text-sky-400 mb-4"></div>
+            <h3 id="tutorial-title" class="text-xl font-black text-white mb-2 uppercase tracking-wide"></h3>
+            <p id="tutorial-desc" class="text-slate-400 text-sm leading-relaxed"></p>
+        </div>
+    </div>
+
+    <!-- Pantalla de Game Over -->
+    <div id="gameover-screen" class="absolute inset-0 z-40 bg-slate-950/90 backdrop-blur-md hidden flex-col items-center justify-center p-6 text-center">
+        <div class="text-6xl mb-4">💥</div>
+        <h2 class="text-4xl md:text-5xl font-black text-rose-500 mb-2 uppercase tracking-wider">¡Fin del Juego!</h2>
+        <p id="gameover-reason" class="text-slate-300 text-lg md:text-xl mb-8 max-w-md font-medium"></p>
+        
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 w-full max-w-xs mb-8 flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 text-sm font-bold uppercase tracking-wider">Puntuación</span>
+                <span id="final-score" class="text-3xl font-black text-white">0</span>
+            </div>
+            <div class="h-px w-full bg-slate-800"></div>
+            <div class="flex justify-between items-center">
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Mejor Récord</span>
+                <span id="best-score" class="text-xl font-black text-yellow-400">0</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+            <button onclick="restartCurrentGame()" class="flex-1 bg-sky-500 hover:bg-sky-400 text-white font-black py-4 px-6 rounded-2xl shadow-[0_0_20px_rgba(14,165,233,0.4)] active:scale-95 transition-all flex justify-center items-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i> Jugar de Nuevo
+            </button>
+            <button onclick="exitToLobby()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-black py-4 px-6 rounded-2xl border border-slate-700 active:scale-95 transition-all flex justify-center items-center gap-2">
+                <i class="fa-solid fa-house"></i> Menú Principal
             </button>
         </div>
     </div>
 
-    <!-- FIRMA DIGITAL DE NASSLO MUÑOZ -->
-    <div class="fixed bottom-4 right-4 md:bottom-6 md:right-8 opacity-50 hover:opacity-100 transition-opacity duration-500 z-50 print:hidden pointer-events-none select-none">
-        <div class="flex flex-col items-end">
-            <span class="text-[0.65rem] text-gray-400 uppercase tracking-widest font-sans mb-[-4px]" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">Creada por</span>
-            <span class="text-2xl text-gray-200" style="font-family: 'Brush Script MT', 'Lucida Handwriting', 'Great Vibes', cursive; text-shadow: 1px 1px 3px rgba(0,0,0,0.9);">Nasslo Muñoz</span>
-            <span class="text-[0.6rem] text-gray-400 font-sans tracking-widest uppercase mt-1" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">Ingeniero Informático</span>
+    <!-- Vista de Control Remoto (Celular) -->
+    <div id="remote-view" class="hidden absolute inset-0 z-50 bg-slate-950 flex-col items-center justify-between p-6 overflow-hidden">
+        <div class="w-full flex justify-between items-center">
+            <div id="remote-game-status" class="text-xs font-bold bg-slate-900 px-4 py-2 rounded-full border border-slate-800 text-slate-400">
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i> Conectando...
+            </div>
+            <button id="btn-calibrate" onclick="calibrateDevice()" class="bg-slate-800 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-slate-700 active:bg-slate-600 transition-colors border border-slate-700">
+                <i class="fa-solid fa-compass-drafting mr-1"></i> Calibrar
+            </button>
         </div>
+
+        <div class="flex flex-col items-center justify-center flex-1 w-full my-8 relative">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.1)_0%,transparent_70%)] pointer-events-none"></div>
+            <!-- Medidor de Inclinación -->
+            <div class="w-16 h-64 level-container rounded-full relative overflow-hidden border-4 border-slate-800 shadow-[inset_0_10px_20px_rgba(0,0,0,0.5)] mb-8">
+                <!-- Marca central -->
+                <div class="absolute top-1/2 left-0 w-full h-1 bg-sky-500/50 -translate-y-1/2 z-10"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-sky-400 z-10"></div>
+                <!-- Burbuja -->
+                <div id="level-bubble" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-sky-400 rounded-full shadow-[0_0_15px_rgba(56,189,248,0.8)] transition-transform duration-75 flex items-center justify-center overflow-hidden border-2 border-white/20">
+                    <i class="fa-solid fa-arrows-up-down text-white/50 text-xl"></i>
+                </div>
+            </div>
+
+            <!-- Botón para subir foto del piloto -->
+            <input type="file" id="camera-file-input" accept="image/*" class="hidden" onchange="processCapturedPhoto(event)">
+            <button onclick="triggerCameraInput()" class="bg-slate-800/80 backdrop-blur-md border border-slate-700 text-white px-6 py-3 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-3 text-sm font-bold">
+                <i class="fa-solid fa-camera text-sky-400 text-lg"></i>
+                <span id="camera-btn-text">Subir Foto Piloto</span>
+            </button>
+        </div>
+
+        <button id="btn-tap-jump" class="w-full bg-sky-500 hover:bg-sky-400 text-white font-black text-2xl py-8 rounded-[2rem] shadow-[0_0_30px_rgba(14,165,233,0.3)] active:scale-95 transition-transform select-none uppercase tracking-widest relative overflow-hidden">
+            <span class="relative z-10">¡Aletear / Saltar!</span>
+            <div class="absolute inset-0 bg-white/20 translate-y-full active:translate-y-0 transition-transform duration-100"></div>
+        </button>
     </div>
 
     <!-- LÓGICA Y MOTOR GRÁFICO DEL JUEGO CON SOPORTE PEERJS -->
     <script>
+        // Lógica del Splash Screen
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                splash.classList.add('hidden');
+                setTimeout(() => splash.style.display = 'none', 500);
+            }, 2000); 
+        });
+
+        // Registro del Service Worker para PWA
+        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker registrado correctamente.'))
+                    .catch(err => console.log('Error al registrar Service Worker:', err));
+            });
+        }
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -1454,9 +1499,9 @@
             ctx.rotate(player.angle);
 
             if (gameMode === 'volar' || gameMode === 'camara_volar') {
-                const wingOscillation = Math.sin(Date.now() * 0.015) * (player.radius * 0.6);
+                const wingOscillation = Math.sin(Date.now() * 0.015) * (player.radius * 0.7);
+                const breath = Math.sin(Date.now() * 0.005) * (player.radius * 0.05);
                 
-                // Activar sombra resplandeciente exterior si está bajo efecto de comida
                 if (player.transformTimer > 0) {
                     ctx.shadowBlur = 25;
                     ctx.shadowColor = player.glowColor || '#ffffff';
@@ -1465,25 +1510,45 @@
                     ctx.shadowColor = '#d946ef';
                 }
 
-                ctx.fillStyle = player.colorOverride || '#a855f7'; 
+                const mainColor = player.colorOverride || '#8b5cf6';
+                const darkColor = player.colorOverride ? player.glowColor : '#7c3aed';
+                
+                // Alas redondas
+                ctx.fillStyle = mainColor;
+                ctx.beginPath();
+                ctx.moveTo(-player.radius * 0.3, breath);
+                ctx.quadraticCurveTo(-player.radius * 1.6, -player.radius * 0.6 + wingOscillation, -player.radius * 2.1, -player.radius * 0.1 + wingOscillation);
+                ctx.quadraticCurveTo(-player.radius * 1.5, player.radius * 0.8, -player.radius * 0.3, player.radius * 0.4 + breath);
+                ctx.fill();
                 
                 ctx.beginPath();
-                ctx.moveTo(-player.radius * 0.25, 0);
-                ctx.quadraticCurveTo(-player.radius * 1.2, -player.radius * 0.8 + wingOscillation, -player.radius * 2.0, -player.radius * 0.4 + wingOscillation);
-                ctx.quadraticCurveTo(-player.radius * 1.25, player.radius * 0.25, -player.radius * 0.25, player.radius * 0.5);
-                ctx.closePath();
+                ctx.moveTo(player.radius * 0.3, breath);
+                ctx.quadraticCurveTo(player.radius * 1.6, -player.radius * 0.6 + wingOscillation, player.radius * 2.1, -player.radius * 0.1 + wingOscillation);
+                ctx.quadraticCurveTo(player.radius * 1.5, player.radius * 0.8, player.radius * 0.3, player.radius * 0.4 + breath);
                 ctx.fill();
 
+                // Orejitas tiernas
+                ctx.fillStyle = darkColor;
                 ctx.beginPath();
-                ctx.moveTo(player.radius * 0.25, 0);
-                ctx.quadraticCurveTo(player.radius * 1.2, -player.radius * 0.8 + wingOscillation, player.radius * 2.0, -player.radius * 0.4 + wingOscillation);
-                ctx.quadraticCurveTo(player.radius * 1.25, player.radius * 0.25, player.radius * 0.25, player.radius * 0.5);
-                ctx.closePath();
+                ctx.ellipse(-player.radius * 0.35, -player.radius * 0.5 + breath, player.radius * 0.25, player.radius * 0.4, -0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(player.radius * 0.35, -player.radius * 0.5 + breath, player.radius * 0.25, player.radius * 0.4, 0.4, 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.fillStyle = player.colorOverride ? player.glowColor : '#6b21a8'; 
+                // Interior de las orejas
+                ctx.fillStyle = '#fbcfe8';
                 ctx.beginPath();
-                ctx.arc(0, player.radius * 0.25, player.radius * 0.7, 0, Math.PI * 2);
+                ctx.ellipse(-player.radius * 0.35, -player.radius * 0.5 + breath, player.radius * 0.12, player.radius * 0.25, -0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(player.radius * 0.35, -player.radius * 0.5 + breath, player.radius * 0.12, player.radius * 0.25, 0.4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Cuerpo gordito
+                ctx.fillStyle = mainColor;
+                ctx.beginPath();
+                ctx.arc(0, breath, player.radius * 0.7, 0, Math.PI * 2);
                 ctx.fill();
 
                 ctx.shadowBlur = 0; 
@@ -1491,52 +1556,63 @@
                 if (playerFaceImage && playerFaceImage.complete) {
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(0, -player.radius * 0.3, player.radius * 0.65, 0, Math.PI * 2);
+                    ctx.arc(0, breath, player.radius * 0.65, 0, Math.PI * 2);
                     ctx.clip();
-                    ctx.drawImage(playerFaceImage, -player.radius * 0.65, -player.radius * 0.3 - player.radius * 0.65, player.radius * 1.3, player.radius * 1.3);
+                    ctx.drawImage(playerFaceImage, -player.radius * 0.65, -player.radius * 0.65 + breath, player.radius * 1.3, player.radius * 1.3);
                     ctx.restore();
-
-                    ctx.fillStyle = player.colorOverride || '#6b21a8';
-                    ctx.beginPath();
-                    ctx.moveTo(-player.radius * 0.3, -player.radius * 0.65);
-                    ctx.lineTo(-player.radius * 0.5, -player.radius * 1.15);
-                    ctx.lineTo(-player.radius * 0.1, -player.radius * 0.8);
-                    ctx.moveTo(player.radius * 0.3, -player.radius * 0.65);
-                    ctx.lineTo(player.radius * 0.5, -player.radius * 1.15);
-                    ctx.lineTo(player.radius * 0.1, -player.radius * 0.8);
-                    ctx.fill();
                 } else {
-                    ctx.fillStyle = player.colorOverride || '#7e22ce';
+                    // Ojos grandes anime
+                    ctx.fillStyle = '#ffffff';
                     ctx.beginPath();
-                    ctx.arc(0, -player.radius * 0.4, player.radius * 0.55, 0, Math.PI * 2);
+                    ctx.arc(-player.radius * 0.25, -player.radius * 0.1 + breath, player.radius * 0.25, 0, Math.PI * 2);
+                    ctx.arc(player.radius * 0.25, -player.radius * 0.1 + breath, player.radius * 0.25, 0, Math.PI * 2);
                     ctx.fill();
 
+                    // Pupilas
+                    ctx.fillStyle = '#0f172a';
                     ctx.beginPath();
-                    ctx.moveTo(-player.radius * 0.4, -player.radius * 0.6);
-                    ctx.lineTo(-player.radius * 0.6, -player.radius * 1.1);
-                    ctx.lineTo(-player.radius * 0.15, -player.radius * 0.75);
-                    ctx.moveTo(player.radius * 0.4, -player.radius * 0.6);
-                    ctx.lineTo(player.radius * 0.6, -player.radius * 1.1);
-                    ctx.lineTo(player.radius * 0.15, -player.radius * 0.75);
+                    ctx.arc(-player.radius * 0.22, -player.radius * 0.1 + breath, player.radius * 0.14, 0, Math.PI * 2);
+                    ctx.arc(player.radius * 0.22, -player.radius * 0.1 + breath, player.radius * 0.14, 0, Math.PI * 2);
                     ctx.fill();
 
-                    ctx.fillStyle = '#ffffff'; 
+                    // Brillos
+                    ctx.fillStyle = '#ffffff';
                     ctx.beginPath();
-                    ctx.arc(-player.radius * 0.18, -player.radius * 0.4, player.radius * 0.15, 0, Math.PI * 2);
-                    ctx.arc(player.radius * 0.18, -player.radius * 0.4, player.radius * 0.15, 0, Math.PI * 2);
+                    ctx.arc(-player.radius * 0.28, -player.radius * 0.16 + breath, player.radius * 0.06, 0, Math.PI * 2);
+                    ctx.arc(player.radius * 0.16, -player.radius * 0.16 + breath, player.radius * 0.06, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.arc(-player.radius * 0.18, -player.radius * 0.05 + breath, player.radius * 0.03, 0, Math.PI * 2);
+                    ctx.arc(player.radius * 0.28, -player.radius * 0.05 + breath, player.radius * 0.03, 0, Math.PI * 2);
                     ctx.fill();
 
-                    ctx.fillStyle = '#2563eb';
-                    ctx.beginPath();
-                    ctx.arc(-player.radius * 0.15, -player.radius * 0.4, player.radius * 0.07, 0, Math.PI * 2);
-                    ctx.arc(player.radius * 0.21, -player.radius * 0.4, player.radius * 0.07, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.strokeStyle = '#ffffff';
+                    // Boquita sonriente
+                    ctx.strokeStyle = '#0f172a';
                     ctx.lineWidth = 2.5;
                     ctx.beginPath();
-                    ctx.arc(0, -player.radius * 0.25, player.radius * 0.15, 0.1 * Math.PI, 0.9 * Math.PI);
+                    ctx.arc(0, player.radius * 0.15 + breath, player.radius * 0.12, 0.1 * Math.PI, 0.9 * Math.PI, false);
                     ctx.stroke();
+
+                    // Colmillitos
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(-player.radius * 0.08, player.radius * 0.18 + breath);
+                    ctx.lineTo(-player.radius * 0.05, player.radius * 0.28 + breath);
+                    ctx.lineTo(-player.radius * 0.02, player.radius * 0.20 + breath);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(player.radius * 0.08, player.radius * 0.18 + breath);
+                    ctx.lineTo(player.radius * 0.05, player.radius * 0.28 + breath);
+                    ctx.lineTo(player.radius * 0.02, player.radius * 0.20 + breath);
+                    ctx.fill();
+
+                    // Mejillas sonrojadas
+                    ctx.fillStyle = 'rgba(244, 63, 94, 0.4)';
+                    ctx.beginPath();
+                    ctx.ellipse(-player.radius * 0.45, player.radius * 0.05 + breath, player.radius * 0.12, player.radius * 0.06, -0.2, 0, Math.PI * 2);
+                    ctx.ellipse(player.radius * 0.45, player.radius * 0.05 + breath, player.radius * 0.12, player.radius * 0.06, 0.2, 0, Math.PI * 2);
+                    ctx.fill();
                 }
             } else {
                 // Delfín/Pez
