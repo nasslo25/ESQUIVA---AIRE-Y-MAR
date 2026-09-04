@@ -198,7 +198,8 @@
 
     <!-- Cámara PC HUD -->
     <div id="pc-camera-hud" class="hidden absolute bottom-4 left-4 z-20 flex-col items-start pointer-events-none opacity-60">
-        <video id="webcamPC" class="w-32 h-24 rounded-lg border-2 border-indigo-500 object-cover" muted playsinline></video>
+        <!-- Agregado transform -scale-x-100 para efecto espejo natural -->
+        <video id="webcamPC" class="w-32 h-24 rounded-lg border-2 border-indigo-500 object-cover transform -scale-x-100" muted playsinline></video>
         <div class="w-full bg-slate-800 h-2 mt-2 rounded-full overflow-hidden"><div id="motion-intensity-bar" class="h-full bg-indigo-400 transition-all duration-75 w-0"></div></div>
     </div>
 
